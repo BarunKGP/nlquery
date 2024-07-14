@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Interactive Chart</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        .bar {
+            fill: steelblue;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+        .axis-label {
+            font-size: 12px;
+        }
+        #chart {
+            overflow-x: auto;
+            padding-left: 10rem;
+            padding-bottom: 4rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Top 5 Days by Total Revenue</h1>
+    <div id="chart"></div>
+
+    <script>
+        // Set the dimensions and margins of the graph
+        const margin = {top: 20, right: 20, bottom: 50, left: 100},
+              width = 800 - margin.left - margin.right,
+              height = 400 - margin.top - margin.bottom;
+
+        // Append the svg object to the body of the page
+        const svg = d3.select("#chart")
+                      .append("svg")
+                      .attr("width", width + margin.left + margin.right)
+                      .attr("height", height + margin.top + margin.bottom)
+                      .append("g")
+                      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Load the CSV data
+        d3.csv("dummy_data.csv").then(data => {
+            // Parse the date and calculate the total revenue for each day
+            const parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S.%f");
+            const revenueByDay = {};
+
+            data.forEach(d => {
+                const date = d3.timeFormat("%Y-%m-%d")(parseDate(d.Timestamp));
+                const revenue = +d.Price * +d["Quantity sold"];
+                
+                if (revenueByDay[date]) {
+                    revenueByDay[date] += revenue;
+                } else {
+                    revenueByDay[date] = revenue;
+                }
+            });
+
+            // Convert the revenueByDay object into an array
+            const revenueData = Object.keys(revenueByDay).map(date => {
+                return { date: date, revenue: revenueByDay[date] };
+            });
+
+            // Sort the data by revenue in descending order and take the top 5 days
+            const top5Data = revenueData.sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+
+            // console.log(top5Data)
+
+            // Sort the top 5 data by date in ascending order
+            top5Data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // X axis: scale and draw
+            const x = d3.scaleBand()
+                        .domain(top5Data.map(d => d.date))
+                        .range([0, width])
+                        .padding(0.1);
+            svg.append("g")
+               .attr("transform", `translate(0, ${height})`)
+               .call(d3.axisBottom(x))
+               .selectAll("text")
+               .attr("transform", "rotate(-45)")
+               .style("text-anchor", "end");
+
+            // Y axis: scale and draw
+            const y = d3.scaleLinear()
+                        .domain([0, d3.max(top5Data, d => d.revenue)])
+                        .range([height, 0]);
+            svg.append("g")
+               .call(d3.axisLeft(y));
+
+            // Bars
+            svg.selectAll(".bar")
+               .data(top5Data)
+               .enter()
+               .append("rect")
+               .attr("class", "bar")
+               .attr("x", d => x(d.date))
+               .attr("y", d => y(d.revenue))
+               .attr("width", x.bandwidth())
+               .attr("height", d => height - y(d.revenue));
+
+            // Labels
+            svg.append("text")
+               .attr("x", width / 2 )
+               .attr("y", height + margin.bottom)
+               .style("text-anchor", "middle")
+               .attr("class", "axis-label")
+               .text("Date");
+
+            svg.append("text")
+               .attr("x", -margin.left)
+               .attr("y", -10)
+               .style("text-anchor", "middle")
+               .attr("class", "axis-label")
+               .text("Total Revenue");
+        }).catch(error => {
+            console.error('Error loading or parsing data:', error);
+        });
+    </script>
+</body>
+</html>
