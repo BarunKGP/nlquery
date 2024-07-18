@@ -11,6 +11,20 @@ class DataItemBase(BaseModel):
     type: DataTypes
     data: bytes
 
+class Connector:
+    def __init__(self, type: DataTypes):
+        self.type = type
+
+    def connect(self):
+        if self.type is DataTypes.CSV:
+            return self.__csv_connector()
+        else:
+            # TODO: create custom Exceptions
+            raise Exception("invalid connector")
+
+
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello from Leyndash!"}
