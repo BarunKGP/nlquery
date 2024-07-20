@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "leyndash"
+name = "nlquery"
 version = "0.1.0"
 description = "A BI dashboard powered by natural language"
 authors = ["Barun Das <barun.das.23@gmail.com>"]
