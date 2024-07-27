@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Bar Chart with Plotly.js</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div id="bar-chart" style="width:600px;height:400px;"></div>
+    <script>
+        // Data for the bar chart
+        var data = [{
+            x: ['Category A', 'Category B', 'Category C'],
+            y: [20, 14, 23],
+            type: 'bar'
+        }];
+
+        // Layout configuration for the bar chart
+        var layout = {
+            title: 'Basic Bar Chart',
+            xaxis: {
+                title: 'Categories'
+            },
+            yaxis: {
+                title: 'Values'
+            }
+        };
+
+        // Plotting the bar chart
+        Plotly.newPlot('bar-chart', data, layout);
+    </script>
+</body>
+</html>

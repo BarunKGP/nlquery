@@ -1,0 +1,7 @@
+[
+    {
+        "prompt": "Drawing a [Basic Bar Chart]",
+        "code": "var data = [{\nx: ['giraffes', 'orangutans', 'monkeys'\n],\ny: [\n20,\n14,\n23\n],\ntype: 'bar'\n}\n];\n\nPlotly.newPlot('myDiv', data);"
+    },
+    {}
+]
