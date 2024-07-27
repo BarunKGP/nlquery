@@ -15,7 +15,7 @@ from transformers import (
     BitsAndBytesConfig,
 )
 
-import SEED from config
+# import SEED from config
 
 set_seed(SEED)
 
@@ -32,3 +32,7 @@ train_data = dataset.skip(4000)
 train_data = train_data.shuffle(buffer_size=5000, seed=SEED)
 
 tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
+
+
+class DocumentationDataset:
+    def __init__(self)
