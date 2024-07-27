@@ -8,9 +8,6 @@ from transformers import pipeline
 MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 
 
-
-
-
 def init_model():
     os.environ["HF_TOKEN"] = "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"
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
@@ -47,7 +44,6 @@ def init_model():
 
     PLOTLY_PROMPT += f' {example_plotly_code} \n' + '}'
     return PLOTLY_PROMPT
-     
 
 
 def construct_user_prompt(csv_file):
@@ -71,7 +67,6 @@ def main():
     # csv_file = input("Enter CSV file path:")
     user_prompt = "Generate a bar chart showing the total revenue each day for the given data"
     csv_file = "data/revenue_last3m.csv"
-
 
     PLOTLY_PROMPT = init_model()
     user_content = {"user": user_prompt, "schema": construct_user_prompt(csv_file)}
@@ -101,8 +96,7 @@ def main():
     print("Getting outputs...")
     outputs = pipe(
         messages,
-        max_new_tokens=None,
-        do_sample=True,
+        max_new_tokens=256,
     )
 
     print('Received outputs. Printing response...')
