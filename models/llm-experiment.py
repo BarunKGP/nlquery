@@ -65,7 +65,7 @@ def construct_user_prompt(csv_file):
 def main():
     # user_prompt = input("Enter your nlQuery:")
     # csv_file = input("Enter CSV file path:")
-    user_prompt = "Generate a bar chart showing the total revenue each day for the given data"
+    user_prompt = "Generate a bar chart showing the average temperature each week"
     csv_file = "data/revenue_last3m.csv"
 
     PLOTLY_PROMPT = init_model()
@@ -96,7 +96,7 @@ def main():
     print("Getting outputs...")
     outputs = pipe(
         messages,
-        max_new_tokens=256,
+        max_new_tokens=512,
     )
 
     print('Received outputs. Printing response...')
