@@ -22,7 +22,7 @@ const UploadButton = () => {
     const formData = new FormData();
     formData.append("file", selectedFile);
 
-    await fetch("https://localhost:8000/api/prompt", {
+    await fetch("https://localhost:8000/api/v1/prompt", {
       method: "POST",
       body: formData,
     })
