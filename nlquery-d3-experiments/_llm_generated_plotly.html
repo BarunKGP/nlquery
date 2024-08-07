@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Average Temperature Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body>
+    <input type="file" id="csvFileInput" accept=".csv">
+    <div id="myPlot"></div>
+
+    <script>
+        // Function to calculate weekly average temperature
+        function calculateWeeklyAverageTemperature(data) {
+            const weeklyAverageTemp = {};
+
+            data.forEach(row => {
+                const date = row.date.split(' ')[0]; // Extract date part
+                const week = date.split('-')[1] + '-' + date.split('-')[2];
+
+                if (weeklyAverageTemp[week]) {
+                    weeklyAverageTemp[week].low += parseFloat(row.daily_temp_low);
+                    weeklyAverageTemp[week].high += parseFloat(row.daily_temp_high);
+                } else {
+                    weeklyAverageTemp[week] = { low: parseFloat(row.daily_temp_low), high: parseFloat(row.daily_temp_high) };
+                }
+            });
+
+            const weeks = Object.keys(weeklyAverageTemp);
+            const averageTempsLow = weeks.map(week => weeklyAverageTemp[week].low / weeks.filter(w => w === week).length);
+            const averageTempsHigh = weeks.map(week => weeklyAverageTemp[week].high / weeks.filter(w => w === week).length);
+
+            return { weeks, averageTempsLow, averageTempsHigh };
+        }
+
+        // Function to prepare data for Plotly
+        function prepareDataForPlotly(weeks, averageTempsLow, averageTempsHigh) {
+            return { weeks, averageTempsLow, averageTempsHigh };
+        }
+         // Function to create the bar graph
+        function createBarGraph(weeks, averageTempsLow, averageTempsHigh) {
+            const traceLow = {
+                x: weeks,
+                y: averageTempsLow,
+                type: 'bar',
+                name: 'Low Temperature',
+                marker: {
+                    color: 'rgb(158,202,225)',
+                    opacity: 0.6,
+                    line: {
+                        color: 'rgb(8,48,107)',
+                        width: 1.5
+                    }
+                }
+            };
+
+            const traceHigh = {
+                x: weeks,
+                y: averageTempsHigh,
+                type: 'bar',
+                name: 'High Temperature',
+                marker: {
+                    color: 'rgb(255, 204, 0)',
+                    opacity: 0.6,
+                    line: {
+                        color: 'rgb(8,48,107)',
+                        width: 1.5
+                    }
+                }
+            };
+
+            const layout = {
+                title: 'Average Temperature Over the Last 3 Months',
+                xaxis: { title: 'Week' },
+                yaxis: { title: 'Temperature' },
+                barmode: 'group'
+            };
+
+            Plotly.newPlot('myPlot', [traceLow, traceHigh], layout);
+        }
+
+        // Function to handle file selection and processing
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+
+            if (file) {
+                Papa.parse(file, {
+                    header: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        const { weeks, averageTempsLow, averageTempsHigh } = calculateWeeklyAverageTemperature(results.data);
+                        createBarGraph(weeks, averageTempsLow, averageTempsHigh);
+                    }
+                });
+            }
+        }
+
+        // Add event listener to file input
+        document.getElementById('csvFileInput').addEventListener('change', handleFileSelect);
+    </script>
+</body>
+</html>

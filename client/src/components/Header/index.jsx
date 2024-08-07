@@ -1,11 +1,11 @@
 import React from "react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import Link from "next/link";
 
 function Header() {
   return (
     <div>
-      <div className="h-20 bg-headerbg w-full mb-10">
+      <div className="h-20 bg-headerbg w-full">
         <div className="grid grid-cols-12 gap-4 p-4 justify-items-center">
           <div className="text-themetext text-2xl col-span-2">nlQuery</div>
           <div className="text-themetext flex gap-4 col-span-7">
