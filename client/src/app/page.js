@@ -1,38 +1,37 @@
-import { SearchBar } from "@/components/component/search-bar";
-import FeatureList from "@/components/feature-list";
-import HeroImage from "../../public/temp-hero-image.png";
-import Image from "next/image";
+import React from "react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="grid gap-12 min-h-screen">
-      <div className="grid grid-cols-2 w-4/5 mx-auto gap-4 justify-items-center items-center">
-        <div className="flex flex-col items-center justify-center gap-2 p-2">
-          <h1 className="text-5xl tracking-tighter">
-            <span className="italic font-thin mr-1">nl</span>Query
+    <div>
+      <div className="flex justify-center gap-8 align-middle curved-edge text-stone-200">
+        <div className="flex flex-col justify-center gap-6 p-4 h-3/4 max-w-[800px]">
+          <h1 className="text-5xl font-bold tracking-tighter text-themetext">
+            Build interactive visualizations by talking to your data
+            {/* <span className="pr-2 italic">nl</span>
+              <span className="text-themetext">Query</span> */}
           </h1>
-          <p className="text-2xl font-thin tracking-tight">
-            Empowering business intelligence through natural language
-          </p>
+          <h2 className="text-lg tracking-tight text-textcolor">
+            As engineers, we wanted to make it incredibly simple to generate
+            insightful visualizations to empower decision-makers. We built
+            nlQuery, a powerful visualization engine which interprets natural
+            language queries to generate beautiful, customizable visualizations
+            suitable for any business use case
+          </h2>
+          <div className="flex gap-2">
+            {/* <Button className="text-lg">Start Building</Button> */}
+            <Button variant="secondary" className="text-lg text-dgreen1">
+              Get on Waitlist
+            </Button>
+          </div>
         </div>
         <div>
-          <div className="border-2 border-gray-900">
-            <Image
-              src={HeroImage}
-              width={400}
-              height={400}
-              alt="hero-image"
-              objectFit="cover"
-            />
+          <div className="w-[500px] border-2 h-96 border-stone-200">
+            Placeholder
           </div>
         </div>
       </div>
-      <div className="text-themetext h-96 border-2 bg-headerbg border-headerbg shadow-md shadow-black p-4 text-center">
-        <p className="text-3xl tracking-tight font-light">
-          Talk to your data in 4 easy steps
-        </p>
-        <FeatureList listKeys={["connector", "query", "dashboard", "share"]} />
-      </div>
+      <div className="min-h-[40vh] text-center">Content Placeholder</div>
     </div>
   );
 }
