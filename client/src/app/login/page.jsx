@@ -8,30 +8,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export function Page() {
   return (
-    <Card className="w-[500px] mx-auto h-[450px] mt-[200px]">
+    <Card className="w-[500px] mx-auto mt-[200px]">
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>Deploy your new project in one-click.</CardDescription>
+        <CardTitle className="text-2xl">Sign in</CardTitle>
+        <CardDescription>Log in with your provider</CardDescription>
       </CardHeader>
       <CardContent>
-        <GoogleButton />
+        <div className="flex flex-col items-center w-full gap-4">
+          <GoogleButton />
+          <GoogleButton />
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      {/* <CardFooter className="flex justify-between">
         <Button variant="outline">Cancel</Button>
         <Button>Deploy</Button>
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 }

@@ -29,7 +29,7 @@ module.exports = {
         textmuted: "hsl(var(--textmuted))",
         textcolor: "hsl(var(--textdefault))",
         themetext: "hsl(var(--themetext))",
-        background: "var(--background)",
+        background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",

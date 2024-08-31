@@ -15,8 +15,8 @@ export default function GoogleButton() {
       <Image
         src={googleSignInUrl}
         alt="google-sign-in"
-        height={72}
-        width={180}
+        height={64}
+        width={240}
       />
     </button>
   );

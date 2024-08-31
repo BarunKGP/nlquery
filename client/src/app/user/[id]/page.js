@@ -1,16 +1,13 @@
-"use client";
-import { useSession } from "next-auth/react";
+import CollapsibleSidebar from "./sidebar";
 
 function Page() {
-  const session = useSession();
-  console.log(session);
-
-  session.data ? (
-    <div className="text-gray-800">
-      Logged in session data: {session.data.user}
+  return (
+    <div className="flex w-full h-screen gap-4 bg-background">
+      <CollapsibleSidebar />
+      <div className="pt-5 text-3xl font-semibold text-center">
+        This is the user page
+      </div>
     </div>
-  ) : (
-    <div className="text-gray-900">Not logged in</div>
   );
 }
 

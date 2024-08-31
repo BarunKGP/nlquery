@@ -21,20 +21,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return token
     },
-    async signIn({ user, account }) {
-      const data: { sessionToken: string } = await fetch("https://localhost:8001/api/v1/auth/signin", {
-        method: "POST",
-        body: JSON.stringify({ user, account })
-      }).then((res) => res.json());
+    // async signIn({ user, account }) {
+    //   const data: { sessionToken: string } = await fetch("https://localhost:8001/api/v1/auth/signin", {
+    //     method: "POST",
+    //     body: JSON.stringify({ user, account })
+    //   }).then((res) => res.json());
 
-      if (data.sessionToken) {
-        (user as ExtendedUser).sessionToken = data.sessionToken;
-        return true;
-      }
+    //   if (data.sessionToken) {
+    //     (user as ExtendedUser).sessionToken = data.sessionToken;
+    //     return true;
+    //   }
 
-      return false;
+    //   return false;
 
-    }
+    // }
     
     // async session({ session, token, user }) {
     //   session.user.id = token.id;
