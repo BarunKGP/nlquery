@@ -21,6 +21,30 @@ class DataItemBase(BaseModel):
     prompt: str
 
 
+class newClass:
+    def __init__(self, name):
+        self.name = name
+        a = [
+            "Several",
+            "words",
+            "together",
+            "in",
+            "a",
+            "really,",
+            "annoyingly",
+            "long",
+            "sentence.", "I'm", "stumped,", "istg!",
+        ]
+        print(
+            "This is a really long string"
+            + "Will the LSP correctly split this?"
+            + "Come on! Split this already!"
+            + "Will you??!" + "I am testing out if the LSP formatting is correct" + "testing even more!" + "another test"
+        )
+
+        print(" ".join(a))
+
+
 class Connector:
 
     def __init__(self, type: DataTypes, data_file):
