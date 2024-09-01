@@ -31,6 +31,11 @@ module.exports = {
         themetext: "hsl(var(--themetext))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        text: {
+          DEFAULT: "hsl(var(--text))",
+          muted: "hsl(var(--text-muted))",
+          inverse: "hsl(var(--text-inverse))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

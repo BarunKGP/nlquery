@@ -12,7 +12,10 @@
       --themetext: 36, 25%, 50%;
       --textmuted: 130, 5%, 43%;
       --textdefault: 135, 5%, 78%;  
-      --background: 40, 9%, 94%;  /* 44, 23%, 84%; 0 0% 100%; */      
+      --text: 219 8% 20%;
+      --text-muted: 219 7% 34%;
+      --text-inverse: 219 16.21% 81.49%;
+      --background: 40, 9%, 98%;  /* 44, 23%, 84%; 0 0% 100%; */      
       --foreground: 222.2 84% 4.9%;
       --card: 0 0% 100%;
       --card-foreground: 222.2 84% 4.9%;
@@ -20,7 +23,7 @@
       --popover-foreground: 222.2 84% 4.9%;
       --primary: 222.2 47.4% 11.2%;
       --primary-foreground: 210 40% 98%;
-      --secondary: 44 4% 87%;
+      --secondary: 40 4% 90%;
       --secondary-foreground: 222.2 47.4% 11.2%;
       --muted: 210 40% 96.1%;
       --muted-foreground: 215.4 16.3% 46.9%;
@@ -40,7 +43,7 @@
     }
 
     .dark {
-      --background: 220, 2%, 12%; /* previously same as .dark.--card */
+      --background: 232, 10%, 15%; /* previously same as .dark.--card */
       --foreground: 210 40% 98%;
       --card: 222.2 84% 4.9%;
       --card-foreground: 210 40% 98%;
@@ -48,7 +51,7 @@
       --popover-foreground: 210 40% 98%;
       --primary: 210 40% 98%;
       --primary-foreground: 222.2 47.4% 11.2%;
-      --secondary: 217.2 32.6% 17.5%;
+      --secondary: 242.12 10.28% 11.58%;
       --secondary-foreground: 210 40% 98%;
       --muted: 217.2 32.6% 17.5%;
       --muted-foreground: 215 20.2% 65.1%;
@@ -64,6 +67,9 @@
       --chart-3: 30 80% 55%;
       --chart-4: 280 65% 60%;
       --chart-5: 340 75% 55%;
+      --text: 219 16.21% 81.49%;
+      --text-muted: 219 7% 55%;
+            --text-inverse: 219 8% 20%;
     }
   }
 
@@ -93,37 +99,87 @@
       background: hsl(var(--headerbg));
     }
 
-    /* Login button branding */
-    .gsi-material-button {
-      -moz-user-select: none;
-      -webkit-user-select: none;
-      -ms-user-select: none;
-      -webkit-appearance: none;
-      background-color: WHITE;
-      background-image: none;
-      border: 1px solid #747775;
-      -webkit-border-radius: 20px;
-      border-radius: 20px;
-      -webkit-box-sizing: border-box;
-      box-sizing: border-box;
-      color: #1f1f1f;
-      cursor: pointer;
-      font-family: 'Roboto', arial, sans-serif;
-      font-size: 14px;
-      height: 40px;
-      letter-spacing: 0.25px;
-      outline: none;
-      overflow: hidden;
-      padding: 0;
+    .gradient-border-parent {
+      padding: 0.25rem;
+      border-radius: 0.75rem;
+      @apply bg-gradient-to-b from-fuchsia-700/70 via-teal-500/80 to-indigo-500/80;
+    }
+
+    .gradient-border-child {
+      border-radius: 0.5rem;
+      @apply bg-background;
+    }
+
+    .stippling {
       position: relative;
-      text-align: center;
-      -webkit-transition: background-color .218s, border-color .218s, box-shadow .218s;
-      transition: background-color .218s, border-color .218s, box-shadow .218s;
-      vertical-align: middle;
-      white-space: nowrap;
-      width: 40px;
-      max-width: 400px;
-      min-width: min-content;
+      font-size: 40px;
+    }
+
+    .stippling::before{
+    content: attr(data-text);
+    position: absolute;
+    top: 0em;
+    left: 0em;
+    color: #313f97;
+    z-index: -1;
+    transition: 0.2s;
+  }
+
+  .stippling:hover::before{
+    top: 0.04em;
+    left: 0.04em;
+  }
+
+  .stippling::after{
+    content: attr(data-text);
+    position: absolute;
+    color: transparent;
+    top: 0em;
+    left: 0em;
+    background-image: radial-gradient(rgba(236, 34, 37, 0.5) 0.0125em, transparent 0.0125em);
+    background-size: 8px 8px;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-stroke: 1px #ec2225;
+    transition: 0.2s;
+  }
+
+  .stippling:hover::after{
+    top: -0.04em;
+    left: -0.04em;
+  }
+
+  /* Login button branding */
+  .gsi-material-button {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -webkit-appearance: none;
+    background-color: WHITE;
+    background-image: none;
+    border: 1px solid #747775;
+    -webkit-border-radius: 20px;
+    border-radius: 20px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    color: #1f1f1f;
+    cursor: pointer;
+    font-family: 'Roboto', arial, sans-serif;
+    font-size: 14px;
+    height: 40px;
+    letter-spacing: 0.25px;
+    outline: none;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+    text-align: center;
+    -webkit-transition: background-color .218s, border-color .218s, box-shadow .218s;
+    transition: background-color .218s, border-color .218s, box-shadow .218s;
+    vertical-align: middle;
+    white-space: nowrap;
+    width: 40px;
+    max-width: 400px;
+    min-width: min-content;
   }
 
   .gsi-material-button .gsi-material-button-icon {
