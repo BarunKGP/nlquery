@@ -25,6 +25,8 @@ const nextConfig = {
     // Modify the file loader rule to ignore *.svg, since we have it handled now.
     fileLoaderRule.exclude = /\.svg$/i;
 
+    
+
     return config;
   },
   images: {
@@ -35,6 +37,17 @@ const nextConfig = {
       },
     ],
   },
+
+  async headers() {
+    return [
+      {
+        source: "/api/:path*",
+        headers: [
+        { key: "Access-Control-Allow-Origin", value:  `${process.env.BACKEND_SERVER}/api/:path*`}
+        ]
+      }
+    ]
+  }
 };
 
 export default nextConfig;
