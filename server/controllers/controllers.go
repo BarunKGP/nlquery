@@ -8,13 +8,20 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func enableCors(next httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		next(w, r, p)
+	}
+}
 
 func HandleHome(logger *slog.Logger) httprouter.Handle {
-    logger.Info("Home route")
+	logger.Info("Home route")
 
-    return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-        fmt.Fprintf(w, "Hello from nlQuery\n")
-    }
+	return enableCors(func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		fmt.Fprintf(w, "Hello from nlQuery\n")
+	})
 }
 
 // func HandleSignin(logger *slog.Logger) httprouter.Handle {
@@ -28,9 +35,6 @@ func HandleHome(logger *slog.Logger) httprouter.Handle {
 
 // 			return
 // 		}
-
-		
-
 
 // 	}
 // }
