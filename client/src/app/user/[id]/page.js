@@ -27,7 +27,7 @@ function Page() {
         <CollapsibleSidebar />
         <div className="grid items-center w-full gap-4 justify-items-center grid-rows-7">
           <div className="grid w-full grid-cols-2 px-4 justify-items-end">
-            <h1 className="space-x-2 text-3xl tracking-tight text-center text-text">
+            <h1 className="space-x-1 text-3xl tracking-tight text-center text-text">
               <span>Good evening, </span>
               <span className="italic">{name}</span>
             </h1>
@@ -41,7 +41,7 @@ function Page() {
           <QuickActions className="row-span-2" />
           <div className="w-full row-span-3 px-4 space-y-2">
             <DashboardContents />
-            <table className="w-full text-center text-text">
+            {/* <table className="w-full text-center text-text">
               <tr className="text-sm text-text-muted">
                 <th>NAME</th>
                 <th>TYPE</th>
@@ -57,7 +57,7 @@ function Page() {
                 <td>Chart</td>
                 <td>08-31-2024 11:56 PM</td>
               </tr>
-            </table>
+            </table> */}
           </div>
           <div className="flex justify-center w-full row-span-1">
             <Footer />
