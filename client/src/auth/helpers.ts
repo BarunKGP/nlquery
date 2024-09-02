@@ -1,10 +1,31 @@
-"use server"
-import { signIn as naSignIn, signOut as naSignOut } from "."
+"use server";
+import { SignInOptions, SignInAuthorizationParams } from "next-auth/react";
+import { signIn as naSignIn, signOut as naSignOut } from ".";
+import { BuiltInProviderType } from "next-auth/providers";
 
-export async function signIn(signInOptions: any) {
-    await naSignIn(signInOptions);
+type SignInOptionsType = {
+  provider: BuiltInProviderType;
+  options: SignInOptions;
+  authorizationParams: SignInAuthorizationParams;
+};
+
+export async function signIn(signInOptions?: SignInOptionsType) {
+  await naSignIn(
+    signInOptions.provider,
+    signInOptions.options,
+    signInOptions.authorizationParams
+  )
+    .then((data) => {
+      fetch(`${process.env.SERVER}/api/v1/auth/signin`, {
+        method: "POST",
+        body: JSON.stringify(data, null, 2),
+      });
+    })
+    .catch((err) => {
+      console.log(`Signin error: ${JSON.stringify(err, null, 2)}`);
+    });
 }
 
 export async function signOut(signOutOptions: any) {
-    await naSignOut(signOutOptions);
+  await naSignOut(signOutOptions);
 }
