@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "models"
+version = "0.1.0"
+description = "ML models for nlquery"
+authors = ["BarunKGP"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = "^2.3.1"
+fairscale = "^0.4.13"
+fire = "^0.6.0"
+blobfile = "^2.1.1"
+bitsandbytes = "^0.43.1"
+spacy = "^3.7.5"
+accelerate = "^0.33.0"
+pandas = "^2.2.2"
+transformers = "^4.43.2"
+python-dotenv = "^1.0.1"
+
+
+[tool.poetry.group.dev-dependencies.dependencies]
+black = "^24.4.2"
+jupyter = "^1.0.0"
+
+
+[tool.poetry.group.scraping.dependencies]
+requests = "^2.32.3"
+beautifulsoup4 = "^4.12.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
