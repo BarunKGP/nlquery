@@ -1,8 +1,6 @@
 build:
-	go build -o bin/main main.go logging.go
+	@go build -o bin/main 
 
-run:
-	go run main.go logging.go
-
-all: build run
+run: build
+	@./bin/main
 

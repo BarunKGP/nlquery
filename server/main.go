@@ -43,27 +43,51 @@ func (r *ApiRouter) Delete(path string, handle httprouter.Handle) {
 	r.DELETE(r.prefix+path, handle)
 }
 
-func getRouter() *ApiRouter {
+func getApiRouter() *ApiRouter {
 	return &ApiRouter{httprouter.New(), "/api/v1"}
 }
 
 func middleware(next httprouter.Handle, logger *slog.Logger) httprouter.Handle {
-	// Logging
-	logger.Info("Home route")
-
 	// Enable CORS
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		// Logging
+		logger.Info("Home route")
+
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		next(w, r, p)
 	}
 }
 
+type apiHandler func(http.ResponseWriter, *http.Request) error
+
+type ErrHandle func(http.ResponseWriter, *http.Request, httprouter.Params) error
+
+func handleError(eh ErrHandle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		if err := eh(w, r, p); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+}
+
 func main() {
 	logger := utils.CreateLogger()
-	router := getRouter()
+	router := getApiRouter()
 
-	router.Get("/", middleware(controllers.HandleHome, logger))
-	router.Post("/auth/login", middleware(controllers.HandleSignin, logger))
+	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Access-Control-Request-Method") != "" {
+			// Set CORS
+			header := w.Header()
+			header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
+			header.Set("Access-Control-Allow-Origin", "localhost:3000")
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	router.Get("/", handleError(controllers.HandleHome))
+	router.Post("/auth/login", handleError(controllers.HandleSignin))
+	// router.Post("/auth/logout", middleware(controllers.HandleSignout, logger))
+	// router.Post("/auth/signup", middleware(controllers.HandleSignup, logger))
 
 	logger.Info("Starting http server")
 	log.Fatal(http.ListenAndServe(":8001", router))
