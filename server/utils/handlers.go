@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -34,7 +34,7 @@ func (err HttpStatusError) GetPath() string {
 }
 
 type Env struct {
-	DB     *sql.DB
+	DB     *pgx.Conn
 	Port   string
 	Host   string
 	Logger *slog.Logger
@@ -58,4 +58,8 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.
 			http.Error(w, "Unknown error occurred", http.StatusInternalServerError)
 		}
 	}
+}
+
+func Handle(h Handler) httprouter.Handle {
+	return h.ServeHTTP
 }

@@ -6,6 +6,10 @@ import (
 	"os"
 )
 
+type ApiLogger struct {
+	slog.Logger
+}
+
 func CreateLogger() *slog.Logger {
 
 	var writer io.Writer
@@ -30,7 +34,7 @@ func CreateLogger() *slog.Logger {
 		Level:     slog.LevelDebug,
 		AddSource: true,
 	}
-	logger := slog.New(slog.NewTextHandler(writer, handlerOpts))
+	logger := slog.New(slog.NewJSONHandler(writer, handlerOpts))
 
 	slog.SetDefault(logger)
 

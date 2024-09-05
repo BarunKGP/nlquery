@@ -5,15 +5,16 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/BarunKGP/nlquery/utils"
 	"github.com/julienschmidt/httprouter"
 )
 
-func HandleHome(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+func HandleHome(e *utils.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	fmt.Fprintf(w, "Hello from nlQuery\n")
 	return nil
 }
 
-func HandleSignin(w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+func HandleSignin(e *utils.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		errMsg := "Unable to read body"

@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/BarunKGP/nlquery/controllers"
 	"github.com/BarunKGP/nlquery/utils"
+	"github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -71,8 +76,40 @@ func handleError(eh ErrHandle) httprouter.Handle {
 }
 
 func main() {
+	if e := godotenv.Load(); e != nil {
+		log.Fatal("Unable to read environment variables")
+	}
+
 	logger := utils.CreateLogger()
+
+	// Get db
+	logger.Info(fmt.Sprintf("Postgres URL: %s", os.Getenv("DATABASE_URL")))
+
+	dbUrl := fmt.Sprintf(
+		"postgres://%v:%v@%v:%v/%v?sslmode=disable",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+	logger.Info("dbUrl: " + dbUrl)
+	conn, err := pgx.Connect(context.Background(), dbUrl)
+	if err != nil {
+		log.Fatal("Unable to connect to database", err)
+	}
+
+	defer conn.Close(context.Background())
+
 	router := getApiRouter()
+
+	host, ok := os.LookupEnv("HOST")
+	if !ok {
+		host = "localhost"
+	}
+	env := &utils.Env{
+		DB: conn, Port: os.Getenv("PORT"), Host: host, Logger: logger,
+	}
 
 	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
@@ -84,8 +121,11 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	router.Get("/", handleError(controllers.HandleHome))
-	router.Post("/auth/login", handleError(controllers.HandleSignin))
+	router.Get("/", utils.Handle(utils.Handler{env, controllers.HandleHome}))
+
+	// router.Get("/", handleError(controllers.HandleHome))
+	// router.Post("/auth/login", handleError(controllers.HandleSignin))
+
 	// router.Post("/auth/logout", middleware(controllers.HandleSignout, logger))
 	// router.Post("/auth/signup", middleware(controllers.HandleSignup, logger))
 
