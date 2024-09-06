@@ -7,10 +7,47 @@ package users
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (
+	name, email, provider, createdAt, lastModified
+) VALUES ($1, $2, $3, $4, $5)
+RETURNING id, name, email, provider, createdat, lastmodified
+`
+
+type CreateUserParams struct {
+	Name         string
+	Email        string
+	Provider     pgtype.Text
+	Createdat    pgtype.Timestamp
+	Lastmodified pgtype.Timestamp
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Name,
+		arg.Email,
+		arg.Provider,
+		arg.Createdat,
+		arg.Lastmodified,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Provider,
+		&i.Createdat,
+		&i.Lastmodified,
+	)
+	return i, err
+}
+
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, provider FROM users
+SELECT id, name, email, provider, createdat, lastmodified FROM users
 WHERE id = $1
 LIMIT 1
 `
@@ -24,12 +61,14 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 		&i.Name,
 		&i.Email,
 		&i.Provider,
+		&i.Createdat,
+		&i.Lastmodified,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, provider FROM users
+SELECT id, name, email, provider, createdat, lastmodified FROM users
 ORDER BY name
 `
 
@@ -47,6 +86,8 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.Name,
 			&i.Email,
 			&i.Provider,
+			&i.Createdat,
+			&i.Lastmodified,
 		); err != nil {
 			return nil, err
 		}
@@ -56,4 +97,45 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateProvider = `-- name: UpdateProvider :exec
+UPDATE users
+	SET provider = $2
+	WHERE id = $1
+`
+
+type UpdateProviderParams struct {
+	ID       int64
+	Provider pgtype.Text
+}
+
+func (q *Queries) UpdateProvider(ctx context.Context, arg UpdateProviderParams) error {
+	_, err := q.db.Exec(ctx, updateProvider, arg.ID, arg.Provider)
+	return err
+}
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users
+	set name=$2,
+	email=$3,
+	lastModified=$4
+WHERE id = $1
+`
+
+type UpdateUserParams struct {
+	ID           int64
+	Name         string
+	Email        string
+	Lastmodified pgtype.Timestamp
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.Exec(ctx, updateUser,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Lastmodified,
+	)
+	return err
 }
