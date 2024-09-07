@@ -27,7 +27,7 @@ import (
 
 var env *internal.Env
 
-func init() {
+func premain() {
 	if e := godotenv.Load(); e != nil {
 		log.Fatal("Unable to read environment variables")
 	}
@@ -58,20 +58,54 @@ func init() {
 		host = "localhost"
 	}
 
-	authConfig := auth.NewAuthConfig([]string{"google", "github"})
+	auth.NewAuthConfig([]string{"google", "github"})
 
 	env = &internal.Env{
-		DB:         conn,
-		Port:       os.Getenv("PORT"),
-		Host:       host,
-		Logger:     logger,
-		DbCtx:      ctx,
-		AuthConfig: authConfig,
+		DB:                 conn,
+		Port:               os.Getenv("PORT"),
+		Host:               host,
+		Logger:             logger,
+		DbCtx:              ctx,
+		ClientAuthRedirect: os.Getenv("CLIENTSIDE_AUTH_REDIRECT_URL"),
 	}
-
 }
 
 func main() {
+
+	if e := godotenv.Load(); e != nil {
+		log.Fatal("Unable to read environment variables")
+	}
+
+	logger := internal.CreateLogger()
+
+	// Get db
+	dbUrl := os.Getenv("DB_URL")
+	logger.Info("Connecting to postgres db with dbUrl: " + dbUrl)
+
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, dbUrl)
+	if err != nil {
+		log.Fatal("Unable to connect to database", err)
+	}
+
+	defer conn.Close(ctx)
+
+	host, ok := os.LookupEnv("HOST")
+	if !ok {
+		host = "localhost"
+	}
+
+	auth.NewAuthConfig([]string{"google", "github"})
+
+	env = &internal.Env{
+		DB:                 conn,
+		Port:               os.Getenv("PORT"),
+		Host:               host,
+		Logger:             logger,
+		DbCtx:              ctx,
+		ClientAuthRedirect: os.Getenv("CLIENTSIDE_AUTH_REDIRECT_URL"),
+	}
+
 	router := internal.GetApiRouter()
 	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
@@ -83,21 +117,21 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	// Auth
+	router.Get("/auth", env.Handle(controllers.GetAuthProviders))
+	router.Get("/auth/:provider", env.Handle(controllers.HandleSignin))
+	router.Get("/auth/:provider/callback", env.Handle(controllers.HandleAuthCallback))
+	router.Get("/logout/:provider", env.Handle(controllers.HandleLogout))
+
+	// Users
 	router.Get("/", env.Handle(controllers.HandleHome))
 	router.Get("/user/:id", env.Handle(controllers.HandleGetUser))
 	router.Post("/user", env.Handle(controllers.HandleCreateUser))
 
-	// Auth
-	router.Get("/auth", env.Handle(controllers.GetAuthProviders))
-	// router.Get("/auth/:provider", env.Handle(controllers.HandleAuth))
 	// router.Get("/auth/:provider/callback", env.Handle(controllers.CompleteAuth))
-	// router.Get("/auth/:provider/callback", env.Handle(controllers.CompleteAuth))
-
 	// router.Get("/", internal.Handle(internal.Handler{env, controllers.HandleHome}))
-
 	// router.Post("/auth/logout", middleware(controllers.HandleSignout, logger))
 	// router.Post("/auth/signup", middleware(controllers.HandleSignup, logger))
-
 	// router.Patch("/user/:id", internal.Handle(internal.Handler{Env: env, H: controllers.HandleGetUser}))
 
 	env.Logger.Info("Starting http server")

@@ -1,17 +1,20 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/BarunKGP/nlquery/internal"
+	"github.com/BarunKGP/nlquery/internal/auth"
 	"github.com/BarunKGP/nlquery/users"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
+	"github.com/markbates/goth/gothic"
 )
 
 func HandleHome(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
@@ -20,7 +23,7 @@ func HandleHome(e *internal.Env, w http.ResponseWriter, r *http.Request, p httpr
 }
 
 func GetAuthProviders(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	authProviders := e.AuthConfig.GetProviders()
+	authProviders := auth.GetProviders()
 
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(map[string][]string{"authProviders": authProviders})
@@ -32,23 +35,111 @@ func GetAuthProviders(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 }
 
 func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		errMsg := "Unable to read body"
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Add("X-Error", errMsg)
+	provider := p.ByName("provider")
+	r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
 
-		return fmt.Errorf(`Error handling signin: %s`, errMsg)
+	gothUser, err := gothic.CompleteUserAuth(w, r)
+	if err != nil {
+		gothic.BeginAuthHandler(w, r)
+		return nil
 	}
 
-	fmt.Printf("response body: %v\n", body)
+	user := internal.ApiUser{
+		Name:   gothUser.Name,
+		Email:  gothUser.Email,
+		UserId: gothUser.UserID,
+	}
+
+	e.Logger.Info(fmt.Sprintf("Signin by user: %+v", user))
+
+	// Check if user exists in db
+	// TODO: How should we search for user?
+	//! UserId returned by provider will be different from our own
+	queries := users.New(e.DB)
+	queryId, convErr := strconv.ParseInt(gothUser.UserID, 10, 64)
+	if convErr != nil {
+		return fmt.Errorf("Error converting goth user id: %v to int64", gothUser.UserID)
+	}
+
+	rawUser, _err := queries.GetUser(e.DbCtx, queryId)
+	if _err != nil {
+		// User not found. Create new user
+		userParams := users.CreateUserParams{
+			Name:         user.Name,
+			Email:        user.Email,
+			Provider:     pgtype.Text{String: "google"},
+			Createdat:    pgtype.Timestamp{Time: time.Now()},
+			Lastmodified: pgtype.Timestamp{Time: time.Now()},
+		}
+
+		user, err := queries.CreateUser(e.DbCtx, userParams)
+		if err != nil {
+			errMsg := fmt.Sprintf("Unable to create user: %v", err.Error())
+			httpErr := internal.HttpStatusError{
+				Message: errMsg,
+				Status:  http.StatusInternalServerError,
+				Path:    r.URL.Path,
+			}
+			e.Logger.Error(httpErr.Error())
+			return httpErr
+		}
+
+		e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
+	}
+
+	e.Logger.Info(fmt.Sprintf("User exists: %+v", rawUser))
+
+	// TOOD: Create session
+
+	// TODO: Write signed in user details to db
+
+	// TODO: Send session details to frontend
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		return fmt.Errorf("Error converting user: %v to API JSON response", gothUser)
+	}
+
+	http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, gothUser.UserID), http.StatusFound)
+
+	return nil
+}
+
+func HandleAuthCallback(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+	provider := p.ByName("provider")
+	r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
+
+	gothUser, err := gothic.CompleteUserAuth(w, r)
+	if err != nil {
+		return internal.NewHttpError("Unable to complete authentication", http.StatusInternalServerError, r.URL.Path)
+
+	}
+
+	user := internal.ApiUser{
+		Name:   gothUser.Name,
+		Email:  gothUser.Email,
+		UserId: gothUser.UserID,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		return fmt.Errorf("Error converting user: %v to API JSON response", gothUser)
+	}
+
+	http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, gothUser.UserID), http.StatusFound)
+
 	return nil
 
-	// Create session
+}
 
-	// Write signed in user details to db
+func HandleLogout(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+	provider := p.ByName("provider")
+	r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
 
-	// Send session details to frontend
+	gothic.Logout(w, r)
+	http.Redirect(w, r, fmt.Sprint("%s/", e.ClientAuthRedirect), http.StatusTemporaryRedirect)
+
+	return nil
 }
 
 func HandleGetUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
@@ -88,17 +179,26 @@ func HandleGetUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p ht
 }
 
 func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+	e.Logger.Info("Reached HandleCreateUser")
 	queries := users.New(e.DB)
 
-	userParams := users.CreateUserParams{}
-	if err := json.NewDecoder(r.Body).Decode(&userParams); err != nil {
+	apiUser := internal.ApiUser{}
+	if err := json.NewDecoder(r.Body).Decode(&apiUser); err != nil {
 		errMsg := fmt.Sprintf("Error decoding body: %v", err.Error())
 		httpErr := internal.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
 		e.Logger.Error(httpErr.Error())
 		return httpErr
 	}
-	userParams.Createdat = pgtype.Timestamp{Time: time.Now()}
-	userParams.Lastmodified = pgtype.Timestamp{Time: time.Now()}
+
+	e.Logger.Info("Received api user: ", slog.Any("apiUser", apiUser))
+
+	userParams := users.CreateUserParams{
+		Name:         apiUser.Name,
+		Email:        apiUser.Email,
+		Provider:     pgtype.Text{String: "google", Valid: true},
+		Createdat:    pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
+		Lastmodified: pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
+	}
 
 	user, err := queries.CreateUser(e.DbCtx, userParams)
 	if err != nil {

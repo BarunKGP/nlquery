@@ -5,11 +5,10 @@ name: nlquery
 services:
   db:
     container_name: nlquery-db
-    image: postgres:13  
+    image: postgres:14  
     environment:
       POSTGRES_USER: nlquery
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: nlquery-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

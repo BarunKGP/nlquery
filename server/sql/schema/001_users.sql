@@ -1,3 +1,5 @@
+-- +goose Up
+
 CREATE TABLE IF NOT EXISTS users (
 	id BIGSERIAL PRIMARY KEY,
 	name text  NOT NULL,
@@ -5,4 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
 	provider text,
 	createdAt timestamp NOT NULL, 
 	lastModified timestamp NOT NULL
-)
+);
+
+-- +goose Down
+DROP TABLE users;

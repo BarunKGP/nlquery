@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/BarunKGP/nlquery/internal/auth"
 	"github.com/jackc/pgx/v5"
 	"github.com/julienschmidt/httprouter"
 )
@@ -46,12 +45,12 @@ func NewHttpError(errMsg string, status int, path string) HttpStatusError {
 }
 
 type Env struct {
-	DB         *pgx.Conn
-	Port       string
-	Host       string
-	Logger     *slog.Logger
-	DbCtx      context.Context
-	AuthConfig auth.AuthConfig
+	DB                 *pgx.Conn
+	Port               string
+	Host               string
+	Logger             *slog.Logger
+	DbCtx              context.Context
+	ClientAuthRedirect string
 }
 
 type ControllerFunc func(e *Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error

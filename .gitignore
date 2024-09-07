@@ -93,4 +93,5 @@ next-env.d.ts
 tmp
 .env
 server/vendor
+.air.toml
 

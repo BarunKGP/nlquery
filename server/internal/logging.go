@@ -1,14 +1,11 @@
 package internal
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
 )
-
-type ApiLogger struct {
-	slog.Logger
-}
 
 func CreateLogger() *slog.Logger {
 
@@ -37,6 +34,8 @@ func CreateLogger() *slog.Logger {
 	logger := slog.New(slog.NewJSONHandler(writer, handlerOpts))
 
 	slog.SetDefault(logger)
+
+	logger.Info(fmt.Sprintf("Logger initialized with writer: %v", writer))
 
 	return logger
 }
