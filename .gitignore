@@ -92,3 +92,5 @@ next-env.d.ts
 ## Golang
 tmp
 .env
+server/vendor
+
