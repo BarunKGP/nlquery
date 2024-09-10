@@ -74,14 +74,11 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 
 		user, err := queries.CreateUser(e.DbCtx, userParams)
 		if err != nil {
-			errMsg := fmt.Sprintf("Unable to create user: %v", err.Error())
-			httpErr := internal.HttpStatusError{
-				Message: errMsg,
+			return internal.HttpStatusError{
+				Message: fmt.Sprintf("Unable to create user: %v", err.Error()),
 				Status:  http.StatusInternalServerError,
 				Path:    r.URL.Path,
 			}
-			e.Logger.Error(httpErr.Error())
-			return httpErr
 		}
 
 		e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
@@ -89,7 +86,7 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 
 	e.Logger.Info(fmt.Sprintf("User exists: %+v", rawUser))
 
-	// TOOD: Create session
+	// TODO: Create session
 
 	// TODO: Write signed in user details to db
 
