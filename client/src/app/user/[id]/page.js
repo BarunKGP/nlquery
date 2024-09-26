@@ -17,12 +17,13 @@ function Page() {
   useEffect(() => {
     if (session && status === "authenticated") {
       const name = session.user.name.split(" ")[0];
+      console.log(`User id: ${session.user.id}`);
       setName(name);
     }
   }, [status]);
 
   return (
-    <container className="w-screen min-h-screen bg-background">
+    <div className="w-screen min-h-screen bg-background">
       <div className="flex h-screen">
         <CollapsibleSidebar />
         <div className="grid items-center w-full gap-4 justify-items-center grid-rows-7">
@@ -64,7 +65,7 @@ function Page() {
           </div>
         </div>
       </div>
-    </container>
+    </div>
   );
 }
 

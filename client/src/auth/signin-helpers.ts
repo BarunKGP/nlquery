@@ -16,7 +16,7 @@ export async function signIn(signInOptions?: SignInOptionsType) {
     signInOptions.authorizationParams
   )
     .then((data) => {
-      fetch(`${process.env.SERVER}/api/v1/auth/signin`, {
+      fetch(`${process.env.SERVER}/auth/signin`, {
         method: "POST",
         body: JSON.stringify(data, null, 2),
       });
@@ -26,6 +26,3 @@ export async function signIn(signInOptions?: SignInOptionsType) {
     });
 }
 
-export async function signOut(signOutOptions: any) {
-  await naSignOut(signOutOptions);
-}

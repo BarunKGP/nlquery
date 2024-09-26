@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import GoogleButton from "./GoogleButton.client";
+import GoogleButton from "./GoogleButton.server";
+import GithubButton from "./GithubButton.server";
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ export function Page() {
       <CardContent>
         <div className="flex flex-col items-center w-full gap-4">
           <GoogleButton />
-          <GoogleButton />
+          <GithubButton />
         </div>
       </CardContent>
       {/* <CardFooter className="flex justify-between">

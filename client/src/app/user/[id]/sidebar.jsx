@@ -11,7 +11,7 @@ import {
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
 } from "@radix-ui/react-icons";
-import { redirect } from "next/dist/server/api-utils";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import ModeSwitcher from "@/components/mode-switcher";
@@ -25,6 +25,7 @@ import {
   SquareArrowUpRight,
   Star,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 // Close Chevron dropdown when clicked outside
 function useOutsideAlerter(ref, setFunction) {
@@ -224,7 +225,11 @@ export default function CollapsibleSidebar() {
               Upgrade to Pro
             </span>
             <span className="px-2 py-1 hover:bg-gray-200 dark:hover:bg-slate-800">
-              <button onClick={() => redirect("/api/auth/signout")}>
+              <button
+                onClick={() => {
+                  signOut({ callbackUrl: "/" });
+                }}
+              >
                 Log Out
               </button>
             </span>
