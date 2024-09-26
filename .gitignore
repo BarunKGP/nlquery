@@ -73,6 +73,7 @@ docs/_build/
 # misc
 .DS_Store
 *.pem
+public
 
 # debug
 npm-debug.log*
