@@ -11,13 +11,13 @@ import {
 
 export function Page() {
   return (
-    <Card className="w-[500px] mx-auto mt-[200px]">
+    <Card className="max-w-[600px] min-w-[400px] mx-auto mt-[200px]">
       <CardHeader>
         <CardTitle className="text-2xl">Sign in</CardTitle>
         <CardDescription>Log in with your provider</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center w-full gap-4">
+        <div className="flex items-center justify-around w-full gap-4 mt-6">
           <GoogleButton />
           <GithubButton />
         </div>

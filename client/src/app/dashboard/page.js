@@ -71,17 +71,23 @@ function Page() {
 
 const Footer = () => {
   return (
-    <div className="flex gap-20 px-4 py-1 mb-4 border-2 rounded-full opacity-70 w-fit border-text-muted">
-      <div className="text-sm text-text-muted -tracking-tight">
+    <div className="flex gap-20 p-2 mx-4 mb-4 border-2 rounded-full opacity-70 w-fit border-text-muted">
+      <div className="text-xs text-center text-text-muted -tracking-tight">
         Terms of Service
       </div>
-      <div className="text-sm text-text-muted -tracking-tight">
+      <div className="text-xs text-center text-text-muted -tracking-tight">
         Privacy Policy
       </div>
-      <div className="text-sm text-text-muted -tracking-tight">Support</div>
-      <div className="text-sm text-text-muted -tracking-tight">Pricing</div>
-      <div className="text-sm text-text-muted -tracking-tight">Enterprise</div>
-      <div className="text-sm text-text-muted -tracking-tight">
+      <div className="text-xs text-center text-text-muted -tracking-tight">
+        Support
+      </div>
+      <div className="text-xs text-center text-text-muted -tracking-tight">
+        Pricing
+      </div>
+      <div className="text-xs text-center text-text-muted -tracking-tight">
+        Enterprise
+      </div>
+      <div className="text-xs text-center text-text-muted -tracking-tight">
         2024 &copy; nlQuery
       </div>
     </div>

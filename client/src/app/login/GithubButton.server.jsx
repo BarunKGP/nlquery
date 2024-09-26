@@ -30,14 +30,16 @@ export default async function GithubButton() {
       }}
     >
       <button type="submit">
-        <div className="flex gap-4">
+        <div className="flex items-center gap-2">
           <Image
             src={githubSignInUrl}
             alt="github-sign-in"
-            height={20}
-            width={27}
+            height={16}
+            width={20}
           />
-          <span>Sign in with Github</span>
+          <span className="text-sm tracking-tighter text-text">
+            Sign in with Github
+          </span>
         </div>
       </button>
     </form>
