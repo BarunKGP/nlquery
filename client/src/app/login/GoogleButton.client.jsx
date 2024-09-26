@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 
 export default function GoogleButton() {
   return (
-    <button onClick={() => signIn("google", { redirectTo: "/user/123" })}>
+    <button onClick={() => signIn("google", { redirectTo: "/dashboard" })}>
       <Image
         src={googleSignInUrl}
         alt="google-sign-in"

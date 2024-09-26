@@ -7,7 +7,7 @@ export default async function GoogleButton() {
     <form
       action={async () => {
         "use server";
-        await signIn("google", { redirectTo: "/user/123/" });
+        await signIn("google", { redirectTo: "/dashboard" });
       }}
     >
       <button type="submit">

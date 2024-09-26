@@ -7,7 +7,7 @@ export default function GoogleButton() {
   return (
     <button
       onClick={() => {
-        signIn("github", { redirectTo: "/user/123" });
+        signIn("github", { redirectTo: "/dashboard" });
       }}
     >
       <div className="flex gap-4">

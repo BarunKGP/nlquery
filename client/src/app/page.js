@@ -1,5 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -20,9 +22,12 @@ export default function Home() {
           </h2>
           <div className="flex gap-2">
             {/* <Button className="text-lg">Start Building</Button> */}
-            <Button variant="secondary" className="text-lg text-dgreen1">
-              Get on Waitlist
-            </Button>
+
+            <Link href={"/login"}>
+              <Button variant="secondary" className="text-lg text-dgreen1">
+                Log In
+              </Button>
+            </Link>
           </div>
         </div>
         <div>

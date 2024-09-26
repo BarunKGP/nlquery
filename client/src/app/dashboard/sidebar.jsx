@@ -2,9 +2,9 @@
 
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import LoadingIconSrc from "../../../../public/loading-icon.png";
-// import LoadingIconSrc from "../../../../public/loading-icon.svg?url"
-import NlQueryLogo from "../../../../public/nlquery-logo.png";
+import NlQueryLogo from "../../../public/nlquery-logo.png";
+import LoadingIconSrc from "../../../public/loading-icon.png";
+
 import Image from "next/image";
 
 import {
@@ -146,11 +146,7 @@ export default function CollapsibleSidebar() {
   return isCollapsed ? (
     <div className="absolute flex top-4 left-2">
       <div className="my-auto">
-        <Image
-          src={NlQueryLogo}
-          width={60}
-          height={40}
-        />
+        <Image src={NlQueryLogo} width={60} height={40} />
       </div>
       <button
         className="p-1 my-6 rounded-full size-fit"
@@ -243,11 +239,7 @@ export default function CollapsibleSidebar() {
       )}
       <div className="m-2 mt-8 gradient-border-parent">
         <div className="flex items-center justify-center gap-1 gradient-border-child">
-          <Image
-            src={NlQueryLogo}
-            width={60}
-            height={40}
-          />
+          <Image src={NlQueryLogo} width={60} height={40} />
           <span
             className="font-semibold tracking-tighter stippling text-text"
             data-text="nlQuery"
@@ -261,4 +253,3 @@ export default function CollapsibleSidebar() {
     </div>
   );
 }
-
