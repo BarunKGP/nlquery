@@ -1,22 +1,15 @@
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import { useSession } from "next-auth/react";
-
 import CollapsibleSidebar from "./sidebar";
 import QuickActions from "./quick-actions";
 import DashboardContents from "./dashboard-contents";
 import CallBackend from "./call-backend";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
-import { Send } from "lucide-react";
 
 import { auth } from "@/auth";
-import NlQueryLogo from "../../../public/nlquery-logo.png";
-import Image from "next/image";
+import { Button } from "@/components/ui/button";
 import ModeSwitcher from "@/components/mode-switcher";
 import NlqueryBanner from "@/components/nlquery-logo-banner";
+
+import Link from "next/link";
+import { Send } from "lucide-react";
 
 async function Page() {
   const session = await auth();
@@ -87,7 +80,7 @@ async function Page() {
                 <td>08-31-2024 11:56 PM</td>
               </tr>
             </table> */}
-            {/* <CallBackend /> */}
+            <CallBackend />
           </div>
           <div className="flex justify-center w-full row-span-1">
             <Footer />
