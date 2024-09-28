@@ -1,3 +1,6 @@
+// This is a toy function meant to check if we can call the BACKEND_SERVER
+// from the frontend. Mainly used to debug connection issues, CORS, etc.
+//! Once you are confident everything works, delete this
 import React from "react";
 
 async function CallBackend() {

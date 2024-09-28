@@ -1,7 +1,6 @@
 import CollapsibleSidebar from "./sidebar";
 import QuickActions from "./quick-actions";
 import DashboardContents from "./dashboard-contents";
-import CallBackend from "./call-backend";
 
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
@@ -80,7 +79,6 @@ async function Page() {
                 <td>08-31-2024 11:56 PM</td>
               </tr>
             </table> */}
-            <CallBackend />
           </div>
           <div className="flex justify-center w-full row-span-1">
             <Footer />
