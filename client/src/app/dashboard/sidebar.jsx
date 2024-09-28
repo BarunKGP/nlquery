@@ -160,7 +160,7 @@ export default function CollapsibleSidebar() {
       </button>
     </div>
   ) : (
-    <div className="h-full bg-secondary">
+    <div className="h-full bg-secondary max-w-[240px]">
       <div className="flex items-center justify-between gap-10 px-4 pt-4">
         <div className="flex items-center justify-center w-full gap-1">
           <Image
@@ -238,7 +238,7 @@ export default function CollapsibleSidebar() {
         </div>
       )}
       <div className="m-2 mt-8 gradient-border-parent">
-        <div className="flex items-center justify-center gap-1 gradient-border-child">
+        <div className="flex items-center justify-center gap-1 px-2 gradient-border-child">
           <Image src={NlQueryLogo} width={60} height={40} />
           <span
             className="font-semibold tracking-tighter stippling text-text"
@@ -249,7 +249,6 @@ export default function CollapsibleSidebar() {
         </div>
       </div>
       <SidebarLinks />
-      <ModeSwitcher className="absolute bottom-10 left-4" />
     </div>
   );
 }
