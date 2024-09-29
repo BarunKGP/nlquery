@@ -10,9 +10,10 @@ type ApiObject interface {
 }
 
 type ApiUser struct {
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	UserId string `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	UserId   string `json:"id"`
+	ImageSrc string `json:"image"`
 	// SessionId string `json:"sessionId"`
 	// Username string `json:"username"`
 	// ProfileImageSrc string `json:"imageUrl"`

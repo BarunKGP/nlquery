@@ -3,7 +3,7 @@
 //   sqlc v1.27.0
 // source: users.sql
 
-package users
+package database
 
 import (
 	"context"
@@ -13,24 +13,26 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-	name, email, provider, createdAt, lastModified
-) VALUES ($1, $2, $3, $4, $5)
-RETURNING id, name, email, provider, createdat, lastmodified
+	name, email, providerUserId, imageSrc, createdAt, lastModified
+) VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, name, email, provideruserid, imagesrc, createdat, lastmodified
 `
 
 type CreateUserParams struct {
-	Name         string
-	Email        string
-	Provider     pgtype.Text
-	Createdat    pgtype.Timestamp
-	Lastmodified pgtype.Timestamp
+	Name           string
+	Email          string
+	Provideruserid pgtype.Text
+	Imagesrc       pgtype.Text
+	Createdat      pgtype.Timestamp
+	Lastmodified   pgtype.Timestamp
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.Name,
 		arg.Email,
-		arg.Provider,
+		arg.Provideruserid,
+		arg.Imagesrc,
 		arg.Createdat,
 		arg.Lastmodified,
 	)
@@ -39,7 +41,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.Provider,
+		&i.Provideruserid,
+		&i.Imagesrc,
 		&i.Createdat,
 		&i.Lastmodified,
 	)
@@ -47,7 +50,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, provider, createdat, lastmodified FROM users
+SELECT id, name, email, provideruserid, imagesrc, createdat, lastmodified FROM users
 WHERE id = $1
 LIMIT 1
 `
@@ -59,7 +62,29 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.Provider,
+		&i.Provideruserid,
+		&i.Imagesrc,
+		&i.Createdat,
+		&i.Lastmodified,
+	)
+	return i, err
+}
+
+const getUserByProviderUserId = `-- name: GetUserByProviderUserId :one
+SELECT id, name, email, provideruserid, imagesrc, createdat, lastmodified FROM users
+WHERE providerUserId = $1
+LIMIT 1
+`
+
+func (q *Queries) GetUserByProviderUserId(ctx context.Context, provideruserid pgtype.Text) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByProviderUserId, provideruserid)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Provideruserid,
+		&i.Imagesrc,
 		&i.Createdat,
 		&i.Lastmodified,
 	)
@@ -67,7 +92,7 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, provider, createdat, lastmodified FROM users
+SELECT id, name, email, provideruserid, imagesrc, createdat, lastmodified FROM users
 ORDER BY name
 `
 
@@ -84,7 +109,8 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.ID,
 			&i.Name,
 			&i.Email,
-			&i.Provider,
+			&i.Provideruserid,
+			&i.Imagesrc,
 			&i.Createdat,
 			&i.Lastmodified,
 		); err != nil {
@@ -98,19 +124,19 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
-const updateProvider = `-- name: UpdateProvider :exec
+const updateProviderUserId = `-- name: UpdateProviderUserId :exec
 UPDATE users
-	SET provider = $2
+	SET providerUserId = $2
 	WHERE id = $1
 `
 
-type UpdateProviderParams struct {
-	ID       int64
-	Provider pgtype.Text
+type UpdateProviderUserIdParams struct {
+	ID             int64
+	Provideruserid pgtype.Text
 }
 
-func (q *Queries) UpdateProvider(ctx context.Context, arg UpdateProviderParams) error {
-	_, err := q.db.Exec(ctx, updateProvider, arg.ID, arg.Provider)
+func (q *Queries) UpdateProviderUserId(ctx context.Context, arg UpdateProviderUserIdParams) error {
+	_, err := q.db.Exec(ctx, updateProviderUserId, arg.ID, arg.Provideruserid)
 	return err
 }
 

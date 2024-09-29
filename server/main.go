@@ -112,21 +112,26 @@ func main() {
 			// Set CORS
 			header := w.Header()
 			header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
-			header.Set("Access-Control-Allow-Origin", "localhost:3000")
+			header.Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	router.Get("/", env.Handle(controllers.HandleHome))
+
 	// Auth
-	router.Get("/auth", env.Handle(controllers.GetAuthProviders))
-	router.Get("/auth/:provider", env.Handle(controllers.HandleSignin))
-	router.Get("/auth/:provider/callback", env.Handle(controllers.HandleAuthCallback))
-	router.Get("/logout/:provider", env.Handle(controllers.HandleLogout))
+	// router.Get("/auth", env.Handle(controllers.GetAuthProviders))
+	// router.Get("/auth/:provider", env.Handle(controllers.HandleSignin))
+	// router.Get("/auth/:provider/callback", env.Handle(controllers.HandleAuthCallback))
+	// router.Get("/logout/:provider", env.Handle(controllers.HandleLogout))
+
+	// Updated Auth - Go + Auth.js
+	router.Post("/auth/signin", env.Handle(controllers.HandleSignin))
+	router.Post("/auth/logout", env.HandleProtected(controllers.HandleLogout))
 
 	// Users
-	router.Get("/", env.Handle(controllers.HandleHome))
-	router.Get("/user/:id", env.Handle(controllers.HandleGetUser))
-	router.Post("/user", env.Handle(controllers.HandleCreateUser))
+	router.Get("/user/:id", env.HandleProtected(controllers.HandleGetUser))
+	router.Post("/user", env.HandleProtected(controllers.HandleCreateUser))
 
 	// router.Get("/auth/:provider/callback", env.Handle(controllers.CompleteAuth))
 	// router.Get("/", internal.Handle(internal.Handler{env, controllers.HandleHome}))

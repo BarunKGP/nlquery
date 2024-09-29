@@ -3,14 +3,19 @@ SELECT * FROM users
 WHERE id = $1
 LIMIT 1;
 
+-- name: GetUserByProviderUserId :one
+SELECT * FROM users
+WHERE providerUserId = $1
+LIMIT 1;
+
 -- name: ListUsers :many
 SELECT * FROM users
 ORDER BY name;
 
 -- name: CreateUser :one
 INSERT INTO users (
-	name, email, provider, createdAt, lastModified
-) VALUES ($1, $2, $3, $4, $5)
+	name, email, providerUserId, imageSrc, createdAt, lastModified
+) VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: UpdateUser :exec
@@ -20,8 +25,8 @@ UPDATE users
 	lastModified=$4
 WHERE id = $1;
 
--- name: UpdateProvider :exec
+-- name: UpdateProviderUserId :exec
 UPDATE users
-	SET provider = $2
+	SET providerUserId = $2
 	WHERE id = $1;
 

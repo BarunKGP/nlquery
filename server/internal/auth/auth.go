@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/markbates/goth"
@@ -26,6 +28,44 @@ const (
 	IsProd = false
 )
 
+// JWT
+var secretKey = []byte("Secret-key: should be replaced in prod ).*")
+
+func CreateToken(userid string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userid":    userid,
+		"exp":       time.Now().Add(time.Hour * 24).Unix(),
+		"http_only": true,
+	})
+
+	tokenString, err := token.SignedString(secretKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func VerifyToken(tokenString string) error {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return secretKey, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return fmt.Errorf("Invalid token")
+	}
+
+	return nil
+}
+
+// OAuth - goth
 var providersLookupMap = map[string]int{
 	"google":      Google_OAuth,
 	"github":      Github_OAuth,
@@ -74,5 +114,4 @@ func NewAuthConfig(provs []string) {
 			os.Getenv("GITHUB_CALLBACK_URL"),
 		),
 	)
-
 }

@@ -11,14 +11,20 @@ import (
 
 	"github.com/BarunKGP/nlquery/internal"
 	"github.com/BarunKGP/nlquery/internal/auth"
-	"github.com/BarunKGP/nlquery/users"
+	"github.com/BarunKGP/nlquery/internal/database"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/markbates/goth/gothic"
 )
 
 func HandleHome(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	fmt.Fprintf(w, "Hello from nlQuery\n")
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Hello from nlQuery!"}); err != nil {
+		return fmt.Errorf("Error encoding message")
+	}
+
+	e.Logger.Info("Hello from nlQuery\n")
+
 	return nil
 }
 
@@ -35,19 +41,26 @@ func GetAuthProviders(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 }
 
 func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	provider := p.ByName("provider")
-	r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
+	// provider := p.ByName("provider")
+	// r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
 
-	gothUser, err := gothic.CompleteUserAuth(w, r)
-	if err != nil {
-		gothic.BeginAuthHandler(w, r)
-		return nil
-	}
+	// gothUser, err := gothic.CompleteUserAuth(w, r)
+	// if err != nil {
+	// 	gothic.BeginAuthHandler(w, r)
+	// 	return nil
+	// }
+	//
+	//
+	// user := internal.ApiUser{
+	// 	Name:   gothUser.Name,
+	// 	Email:  gothUser.Email,
+	// 	UserId: gothUser.UserID,
+	// 	ImageSrc: gothUser.Image,
+	// }
 
-	user := internal.ApiUser{
-		Name:   gothUser.Name,
-		Email:  gothUser.Email,
-		UserId: gothUser.UserID,
+	var user internal.ApiUser
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		return internal.NewHttpError("Unable to parse request body", http.StatusBadRequest, r.URL.Path)
 	}
 
 	e.Logger.Info(fmt.Sprintf("Signin by user: %+v", user))
@@ -55,21 +68,21 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 	// Check if user exists in db
 	// TODO: How should we search for user?
 	//! UserId returned by provider will be different from our own
-	queries := users.New(e.DB)
-	queryId, convErr := strconv.ParseInt(gothUser.UserID, 10, 64)
-	if convErr != nil {
-		return fmt.Errorf("Error converting goth user id: %v to int64", gothUser.UserID)
-	}
+	queries := database.New(e.DB)
+	// queryId, convErr := strconv.Atoi(user.UserId)
+	// if convErr != nil {
+	// 	return fmt.Errorf("Error converting user id: %v to int64", user.UserId)
+	// }
 
-	rawUser, _err := queries.GetUser(e.DbCtx, queryId)
-	if _err != nil {
+	if _, err := queries.GetUserByProviderUserId(e.DbCtx, pgtype.Text{String: user.UserId, Valid: true}); err != nil {
 		// User not found. Create new user
-		userParams := users.CreateUserParams{
-			Name:         user.Name,
-			Email:        user.Email,
-			Provider:     pgtype.Text{String: "google"},
-			Createdat:    pgtype.Timestamp{Time: time.Now()},
-			Lastmodified: pgtype.Timestamp{Time: time.Now()},
+		userParams := database.CreateUserParams{
+			Name:           user.Name,
+			Email:          user.Email,
+			Imagesrc:       pgtype.Text{String: user.ImageSrc, Valid: true},
+			Provideruserid: pgtype.Text{String: user.UserId, Valid: true},
+			Createdat:      pgtype.Timestamp{Time: time.Now(), Valid: true},
+			Lastmodified:   pgtype.Timestamp{Time: time.Now(), Valid: true},
 		}
 
 		user, err := queries.CreateUser(e.DbCtx, userParams)
@@ -80,24 +93,30 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 				Path:    r.URL.Path,
 			}
 		}
-
 		e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
+
 	}
 
-	e.Logger.Info(fmt.Sprintf("User exists: %+v", rawUser))
-
-	// TODO: Create session
+	// Create token
+	token, err := auth.CreateToken(user.UserId)
+	if err != nil {
+		return fmt.Errorf("Error creating token: %v", err)
+	}
 
 	// TODO: Write signed in user details to db
 
-	// TODO: Send session details to frontend
+	// Send token back to frontend
+	e.Logger.Info(fmt.Sprintf("Returning JWT: %v", token))
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		return fmt.Errorf("Error converting user: %v to API JSON response", gothUser)
-	}
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 
-	http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, gothUser.UserID), http.StatusFound)
+	// We don't need to send the user object on signin
+	// if err := json.NewEncoder(w).Encode(user); err != nil {
+	// 	return fmt.Errorf("Error converting user: %v to API JSON response", user)
+	// }
+
+	// http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, user.UserId), http.StatusFound)
 
 	return nil
 }
@@ -130,17 +149,29 @@ func HandleAuthCallback(e *internal.Env, w http.ResponseWriter, r *http.Request,
 }
 
 func HandleLogout(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	provider := p.ByName("provider")
-	r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
+	// provider := p.ByName("provider")
+	// r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
 
-	gothic.Logout(w, r)
-	http.Redirect(w, r, fmt.Sprint("%s/", e.ClientAuthRedirect), http.StatusTemporaryRedirect)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/api/v1/auth/logout",
+		MaxAge:   -1,
+	})
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
 
+	// gothic.Logout(w, r)
+	// http.Redirect(w, r, fmt.Sprint("%s/", e.ClientAuthRedirect), http.StatusTemporaryRedirect)
+	//
 	return nil
 }
 
 func HandleGetUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	queries := users.New(e.DB)
+	queries := database.New(e.DB)
 	id, err := strconv.ParseInt(p.ByName("id"), 10, 64)
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to convert id: %v to int: %v", p.ByName("id"), err.Error())
@@ -177,7 +208,7 @@ func HandleGetUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p ht
 
 func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	e.Logger.Info("Reached HandleCreateUser")
-	queries := users.New(e.DB)
+	queries := database.New(e.DB)
 
 	apiUser := internal.ApiUser{}
 	if err := json.NewDecoder(r.Body).Decode(&apiUser); err != nil {
@@ -189,38 +220,52 @@ func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 
 	e.Logger.Info("Received api user: ", slog.Any("apiUser", apiUser))
 
-	userParams := users.CreateUserParams{
-		Name:         apiUser.Name,
-		Email:        apiUser.Email,
-		Provider:     pgtype.Text{String: "google", Valid: true},
-		Createdat:    pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
-		Lastmodified: pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
+	// Search for existing user
+	queryId, convErr := strconv.Atoi(apiUser.UserId)
+	if convErr != nil {
+		return fmt.Errorf("Error converting user id: %v to int64", apiUser.UserId)
 	}
 
-	user, err := queries.CreateUser(e.DbCtx, userParams)
-	if err != nil {
-		errMsg := fmt.Sprintf("Unable to create user: %v", err.Error())
-		httpErr := internal.HttpStatusError{
-			Message: errMsg,
-			Status:  http.StatusInternalServerError,
-			Path:    r.URL.Path,
+	if _, err := queries.GetUser(e.DbCtx, int64(queryId)); err != nil {
+		// User not found - create new user
+		userParams := database.CreateUserParams{
+			Name:           apiUser.Name,
+			Email:          apiUser.Email,
+			Imagesrc:       pgtype.Text{String: apiUser.ImageSrc, Valid: true},
+			Provideruserid: pgtype.Text{String: apiUser.UserId, Valid: true},
+			Createdat:      pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
+			Lastmodified:   pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
 		}
-		e.Logger.Error(httpErr.Error())
-		return httpErr
+
+		user, err := queries.CreateUser(e.DbCtx, userParams)
+		if err != nil {
+			errMsg := fmt.Sprintf("Unable to create user: %v", err.Error())
+			httpErr := internal.HttpStatusError{
+				Message: errMsg,
+				Status:  http.StatusInternalServerError,
+				Path:    r.URL.Path,
+			}
+			e.Logger.Error(httpErr.Error())
+			return httpErr
+		} else {
+			e.Logger.Info(fmt.Sprintf("User with provider ID: %s exists", user.Provideruserid))
+		}
+
+		e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
 	}
 
-	e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
-
-	userResponse := internal.ApiUser{
-		Name:  user.Name,
-		Email: user.Email,
-		// SessionId: "",
-		UserId: string(user.ID),
-	}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(userResponse); err != nil {
-		return fmt.Errorf("Unable to convert payload: %v to json", userResponse)
+	if err := json.NewEncoder(w).Encode(map[string]string{"message": "success"}); err != nil {
+		return fmt.Errorf("Unable to return success message")
+	}
 
+	return nil
+}
+
+func writeObjectToJson(w http.ResponseWriter, v any) error {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		return fmt.Errorf("Unable to convert payload: %v to json", v)
 	}
 
 	return nil

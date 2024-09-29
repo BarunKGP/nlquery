@@ -5,5 +5,5 @@ sql:
     schema: "sql/schema"
     gen:
       go:
-        out: "users"
+        out: "internal/database"
         sql_package: "pgx/v5"
