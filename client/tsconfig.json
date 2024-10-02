@@ -26,7 +26,8 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx",
-    "src/components/Header/index.jsx"
+    "src/components/Header/index.jsx",
+    "src/auth/index.js"
   ],
   "exclude": ["node_modules"]
 }
