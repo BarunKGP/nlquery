@@ -2,12 +2,14 @@
 
 CREATE TABLE IF NOT EXISTS users(
 	id BIGSERIAL PRIMARY KEY,
-	name text  NOT NULL,
-	email text NOT NULL,
-	providerUserId text,
+	createdAt TIMESTAMPTZ NOT NULL, 
+	lastModified TIMESTAMPTZ NOT NULL,
+	name VARCHAR(200)  NOT NULL,
+	email VARCHAR(200) UNIQUE NOT NULL,
+	providerUserId VARCHAR(64),
 	imageSrc text,
-	createdAt timestamp NOT NULL, 
-	lastModified timestamp NOT NULL
+	sessionId UUID,
+	accountId UUID
 );
 
 -- +goose Down
