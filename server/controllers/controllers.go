@@ -95,7 +95,7 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 	}
 
 	http.SetCookie(w, &cookie)
-	e.Logger.Info("Cookie written successfully")
+	e.Logger.Info(fmt.Sprintf("Cookie written successfully: %+v", cookie))
 
 	// Send token back to frontend through response
 	// w.Header().Set("Content-Type", "application/json")
