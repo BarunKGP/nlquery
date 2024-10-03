@@ -7,7 +7,7 @@ if [ "$(docker ps -q -f name=${CONTAINER_NAME})" ]; then
     
     # goose down
     echo "Running goose down migrations..."
-    goose postgres postgres://nlquery:postgres@localhost:5432/nlquery down
+    goose postgres "postgres://nlquery:postgres@localhost:5432/nlquery" -dir "server/sql/schema" down
 
     # Stop the container
     docker stop "${CONTAINER_NAME}"
