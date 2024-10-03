@@ -15,7 +15,7 @@ const createUser = `-- name: CreateUser :one
 INSERT INTO users (
 	name, email, providerUserId, imageSrc, createdAt, lastModified
 ) VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, name, email, provideruserid, imagesrc, createdat, lastmodified
+RETURNING id, createdat, lastmodified, name, email, provideruserid, imagesrc
 `
 
 type CreateUserParams struct {
@@ -23,8 +23,8 @@ type CreateUserParams struct {
 	Email          string
 	Provideruserid pgtype.Text
 	Imagesrc       pgtype.Text
-	Createdat      pgtype.Timestamp
-	Lastmodified   pgtype.Timestamp
+	Createdat      pgtype.Timestamptz
+	Lastmodified   pgtype.Timestamptz
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -39,18 +39,18 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.Createdat,
+		&i.Lastmodified,
 		&i.Name,
 		&i.Email,
 		&i.Provideruserid,
 		&i.Imagesrc,
-		&i.Createdat,
-		&i.Lastmodified,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, provideruserid, imagesrc, createdat, lastmodified FROM users
+SELECT id, createdat, lastmodified, name, email, provideruserid, imagesrc FROM users
 WHERE id = $1
 LIMIT 1
 `
@@ -60,39 +60,39 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.Createdat,
+		&i.Lastmodified,
 		&i.Name,
 		&i.Email,
 		&i.Provideruserid,
 		&i.Imagesrc,
-		&i.Createdat,
-		&i.Lastmodified,
 	)
 	return i, err
 }
 
-const getUserByProviderUserId = `-- name: GetUserByProviderUserId :one
-SELECT id, name, email, provideruserid, imagesrc, createdat, lastmodified FROM users
-WHERE providerUserId = $1
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, createdat, lastmodified, name, email, provideruserid, imagesrc FROM users
+WHERE email = $1
 LIMIT 1
 `
 
-func (q *Queries) GetUserByProviderUserId(ctx context.Context, provideruserid pgtype.Text) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByProviderUserId, provideruserid)
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.Createdat,
+		&i.Lastmodified,
 		&i.Name,
 		&i.Email,
 		&i.Provideruserid,
 		&i.Imagesrc,
-		&i.Createdat,
-		&i.Lastmodified,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, provideruserid, imagesrc, createdat, lastmodified FROM users
+SELECT id, createdat, lastmodified, name, email, provideruserid, imagesrc FROM users
 ORDER BY name
 `
 
@@ -107,12 +107,12 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		var i User
 		if err := rows.Scan(
 			&i.ID,
+			&i.Createdat,
+			&i.Lastmodified,
 			&i.Name,
 			&i.Email,
 			&i.Provideruserid,
 			&i.Imagesrc,
-			&i.Createdat,
-			&i.Lastmodified,
 		); err != nil {
 			return nil, err
 		}
@@ -152,7 +152,7 @@ type UpdateUserParams struct {
 	ID           int64
 	Name         string
 	Email        string
-	Lastmodified pgtype.Timestamp
+	Lastmodified pgtype.Timestamptz
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

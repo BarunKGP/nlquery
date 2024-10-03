@@ -8,13 +8,12 @@ import (
 )
 
 func CreateLogger() *slog.Logger {
-
 	var writer io.Writer
 
 	// Add a MultiWriter if LOG_FILE is defined
 	le, ok := os.LookupEnv("LOG_FILE")
 	if ok {
-		file, err := os.OpenFile(le, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		file, err := os.OpenFile(le, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
 			panic(err)
 		}

@@ -41,23 +41,6 @@ func GetAuthProviders(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 }
 
 func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	// provider := p.ByName("provider")
-	// r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
-
-	// gothUser, err := gothic.CompleteUserAuth(w, r)
-	// if err != nil {
-	// 	gothic.BeginAuthHandler(w, r)
-	// 	return nil
-	// }
-	//
-	//
-	// user := internal.ApiUser{
-	// 	Name:   gothUser.Name,
-	// 	Email:  gothUser.Email,
-	// 	UserId: gothUser.UserID,
-	// 	ImageSrc: gothUser.Image,
-	// }
-
 	var user internal.ApiUser
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		return internal.NewHttpError("Unable to parse request body", http.StatusBadRequest, r.URL.Path)
@@ -66,23 +49,18 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 	e.Logger.Info(fmt.Sprintf("Signin by user: %+v", user))
 
 	// Check if user exists in db
-	// TODO: How should we search for user?
-	//! UserId returned by provider will be different from our own
 	queries := database.New(e.DB)
-	// queryId, convErr := strconv.Atoi(user.UserId)
-	// if convErr != nil {
-	// 	return fmt.Errorf("Error converting user id: %v to int64", user.UserId)
-	// }
 
-	if _, err := queries.GetUserByProviderUserId(e.DbCtx, pgtype.Text{String: user.UserId, Valid: true}); err != nil {
+	// if _, err := queries.GetUserByProviderUserId(e.DbCtx, pgtype.Text{String: user.UserId, Valid: true}); err != nil {
+	if _, err := queries.GetUserByEmail(e.DbCtx, user.Email); err != nil {
 		// User not found. Create new user
 		userParams := database.CreateUserParams{
 			Name:           user.Name,
 			Email:          user.Email,
 			Imagesrc:       pgtype.Text{String: user.ImageSrc, Valid: true},
 			Provideruserid: pgtype.Text{String: user.UserId, Valid: true},
-			Createdat:      pgtype.Timestamp{Time: time.Now(), Valid: true},
-			Lastmodified:   pgtype.Timestamp{Time: time.Now(), Valid: true},
+			Createdat:      pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
+			Lastmodified:   pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
 		}
 
 		user, err := queries.CreateUser(e.DbCtx, userParams)
@@ -103,20 +81,27 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 		return fmt.Errorf("Error creating token: %v", err)
 	}
 
-	// TODO: Write signed in user details to db
-
-	// Send token back to frontend
 	e.Logger.Info(fmt.Sprintf("Returning JWT: %v", token))
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	// TODO: Write signed in user details to db
 
-	// We don't need to send the user object on signin
-	// if err := json.NewEncoder(w).Encode(user); err != nil {
-	// 	return fmt.Errorf("Error converting user: %v to API JSON response", user)
+	// Send token back to frontend through a cookie
+	cookie := http.Cookie{
+		Name:     "auth_token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   false, // TODO: change to true in prod!,
+		Expires:  time.Now().AddDate(1, 0, 0),
+	}
+
+	http.SetCookie(w, &cookie)
+	e.Logger.Info("Cookie written successfully")
+
+	// Send token back to frontend through response
+	// w.Header().Set("Content-Type", "application/json")
+	// if err := json.NewEncoder(w).Encode(map[string]string{"token": token}); err != nil {
+	// 	return fmt.Errorf("Error converting token: %v to API JSON response", token)
 	// }
-
-	// http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, user.UserId), http.StatusFound)
 
 	return nil
 }
@@ -128,7 +113,6 @@ func HandleAuthCallback(e *internal.Env, w http.ResponseWriter, r *http.Request,
 	gothUser, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
 		return internal.NewHttpError("Unable to complete authentication", http.StatusInternalServerError, r.URL.Path)
-
 	}
 
 	user := internal.ApiUser{
@@ -145,7 +129,6 @@ func HandleAuthCallback(e *internal.Env, w http.ResponseWriter, r *http.Request,
 	http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, gothUser.UserID), http.StatusFound)
 
 	return nil
-
 }
 
 func HandleLogout(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
@@ -157,8 +140,6 @@ func HandleLogout(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 		Value:    "",
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/api/v1/auth/logout",
 		MaxAge:   -1,
 	})
 	w.WriteHeader(http.StatusOK)
@@ -203,7 +184,6 @@ func HandleGetUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p ht
 
 	e.Logger.Info(fmt.Sprintf("Received user with id: %d: %+v", id, user))
 	return nil
-
 }
 
 func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
@@ -233,8 +213,8 @@ func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 			Email:          apiUser.Email,
 			Imagesrc:       pgtype.Text{String: apiUser.ImageSrc, Valid: true},
 			Provideruserid: pgtype.Text{String: apiUser.UserId, Valid: true},
-			Createdat:      pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
-			Lastmodified:   pgtype.Timestamp{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
+			Createdat:      pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
+			Lastmodified:   pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
 		}
 
 		user, err := queries.CreateUser(e.DbCtx, userParams)
