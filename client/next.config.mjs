@@ -25,29 +25,21 @@ const nextConfig = {
     // Modify the file loader rule to ignore *.svg, since we have it handled now.
     fileLoaderRule.exclude = /\.svg$/i;
 
-    
-
     return config;
   },
+
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
     ],
   },
-
-  async headers() {
-    return [
-      {
-        source: "/api/:path*",
-        headers: [
-        { key: "Access-Control-Allow-Origin", value:  `${process.env.BACKEND_SERVER}/api/:path*`}
-        ]
-      }
-    ]
-  }
 };
 
 export default nextConfig;

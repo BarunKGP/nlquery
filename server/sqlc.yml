@@ -1,9 +1,9 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "query.sql"
-    schema: "schema.sql"
+    queries: "sql/query"
+    schema: "sql/schema"
     gen:
       go:
-        out: "users"
+        out: "internal/database"
         sql_package: "pgx/v5"

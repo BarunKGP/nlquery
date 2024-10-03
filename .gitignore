@@ -54,7 +54,6 @@ coverage.xml
 docs/_build/
 
 # Javascript
-
 # dependencies
 */node_modules
 */.pnp
@@ -74,6 +73,7 @@ docs/_build/
 # misc
 .DS_Store
 *.pem
+public
 
 # debug
 npm-debug.log*
@@ -89,3 +89,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+## Golang
+tmp
+.env
+server/vendor
+.air.toml
+
+# Scripts
+launch.sh
+

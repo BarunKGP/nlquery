@@ -1,12 +1,25 @@
-FROM golang
+# syntax=docker/dockerfile:1
 
-RUN mkdir /app
-
-ADD . /app
+FROM golang:1.21
 
 WORKDIR /app
 
-RUN go build -o main ./server/main.go
+COPY server/* ./
+
+# Build
+RUN make docker-build
 
 EXPOSE 8001
-CMD [ "/app/main" ]
+
+# Run 
+CMD ["/nlquery"]
+
+# RUN mkdir /app
+#
+# ADD . /app
+#
+#
+# RUN go build -o main ./server/main.go
+#
+# EXPOSE 8001
+# CMD [ "/app/main" ]

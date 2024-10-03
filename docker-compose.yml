@@ -1,18 +1,36 @@
-version: '3.8'
+version: '3.9'
+
+name: nlquery
 
 services:
   db:
-    image: postgres
-    restart: always
+    container_name: nlquery-db
+    image: postgres:14  
     environment:
-      POSTGRES_PASSWORD: admin
-    
-  api:
-    build: .
-    ports: 
-      - 8001:8001
-    environment:
-      - PORT=8001
-      - DATABASE_URL=db
-    depends_on:
-      - db
+      POSTGRES_USER: nlquery
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+      container_name: nlquery-backend
+      build:
+        context: server
+        dockerfile: Dockerfile.multistage
+      ports:
+        - "8001:8001"  # Adjust the port as needed
+      depends_on:
+        - db
+      environment:
+        DB_HOST: db
+        DB_USER: nlquery
+        DB_PASSWORD: postgres
+        DB_NAME: nlquery-db
+        DB_PORT: 5432
+      volumes:
+        - ./server:/app/server  # Mount your server directory
+
+volumes:
+  postgres_data:
