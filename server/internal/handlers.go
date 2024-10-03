@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
 
-	// "github.com/BarunKGP/nlquery/internal/auth"
 	"github.com/BarunKGP/nlquery/internal/auth"
 	"github.com/jackc/pgx/v5"
 	"github.com/julienschmidt/httprouter"
@@ -57,40 +57,51 @@ type Env struct {
 	ClientAuthRedirect string
 }
 
+func (e *Env) WriteJsonResponse(w io.Writer, v map[string]any, msg string) {
+	if msg != "" {
+		_, ok := v["message"]
+		if ok {
+			log.Fatalf("Cannot add message: %s as value struct already contains key 'message'", msg)
+		}
+
+		v["message"] = msg
+	}
+
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Fatalf("Error writing JSON response: %v", v)
+	}
+}
+
 type ControllerFunc func(e *Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error
 
 func (e *Env) Handle(fn ControllerFunc) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		logger := e.Logger
+
 		// CORS
 		w.Header().Add("Access-Control-Allow-Origin", e.ClientAuthRedirect)
+		// w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
-		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		w.Header().Add(
+			"Access-Control-Allow-Headers",
+			"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With",
+		)
 		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 
-		err := fn(e, w, r, p)
-
-		if err != nil {
+		if err := fn(e, w, r, p); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 
 			switch err := err.(type) {
 			case IApiError:
 				logger.Error(err.Error())
-
-				//* This could be its own function
 				w.WriteHeader(err.GetStatus())
-				if err := json.NewEncoder(w).Encode(map[string]string{"message": err.Error()}); err != nil {
-					log.Fatal("Error encoding JSON response")
-				}
+				e.WriteJsonResponse(w, make(map[string]any), err.Error())
 
 			default:
 				logger.Error(fmt.Sprintf("Internal error occurred: %v", err.Error()))
-
 				w.WriteHeader(http.StatusInternalServerError)
-				if err := json.NewEncoder(w).Encode(map[string]string{"message": "Uh oh... we need a minute :("}); err != nil {
-					log.Fatal("Error encoding JSON response")
-				}
+				e.WriteJsonResponse(w, make(map[string]any), "Uh oh... we need a minute")
 			}
 		}
 	}
@@ -125,38 +136,26 @@ func (e *Env) HandleProtected(fn ControllerFunc) httprouter.Handle {
 	}
 }
 
-type Handler struct {
-	*Env
-	H func(e *Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error
-}
-
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	err := h.H(h.Env, w, r, p)
-	if err != nil {
-		logger := h.Logger
-		switch e := err.(type) {
-		case IApiError:
-			logger.Error(e.Error())
-			http.Error(w, e.Error(), e.GetStatus())
-		default:
-			logger.Error(fmt.Sprintf("Unknown error: %v", e.Error()))
-			http.Error(w, "Unknown error occurred", http.StatusInternalServerError)
-		}
-	}
-}
-
-func Handle(h Handler) httprouter.Handle {
-	return h.ServeHTTP
-	// err := h.H(h.Env, w, r, p)
-	// if err != nil {
-	// 	logger := h.Logger
-	// 	switch e := err.(type) {
-	// 	case IApiError:
-	// 		logger.Error(e.Error())
-	// 		http.Error(w, e.Error(), e.GetStatus())
-	// 	default:
-	// 		logger.Error(fmt.Sprintf("Unknown error: %v", e.Error()))
-	// 		http.Error(w, "Unknown error occurred", http.StatusInternalServerError)
-	// 	}
-	// }
-}
+// type Handler struct {
+// 	*Env
+// 	H func(e *Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error
+// }
+//
+// func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+// 	err := h.H(h.Env, w, r, p)
+// 	if err != nil {
+// 		logger := h.Logger
+// 		switch e := err.(type) {
+// 		case IApiError:
+// 			logger.Error(e.Error())
+// 			http.Error(w, e.Error(), e.GetStatus())
+// 		default:
+// 			logger.Error(fmt.Sprintf("Unknown error: %v", e.Error()))
+// 			http.Error(w, "Unknown error occurred", http.StatusInternalServerError)
+// 		}
+// 	}
+// }
+//
+// func Handle(h Handler) httprouter.Handle {
+// 	return h.ServeHTTP
+// }

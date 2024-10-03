@@ -71,7 +71,6 @@ func premain() {
 }
 
 func main() {
-
 	if e := godotenv.Load(); e != nil {
 		log.Fatal("Unable to read environment variables")
 	}
@@ -141,5 +140,4 @@ func main() {
 
 	env.Logger.Info("Starting http server")
 	log.Fatal(http.ListenAndServe(":8001", router))
-
 }

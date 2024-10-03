@@ -53,7 +53,6 @@ func VerifyToken(tokenString string) error {
 		}
 		return secretKey, nil
 	})
-
 	if err != nil {
 		return err
 	}
@@ -72,6 +71,7 @@ var providersLookupMap = map[string]int{
 	"microsoft":   Microsoft_OAuth,
 	"credentials": Credentials,
 }
+
 var ProvidersMap = map[int]string{
 	Google_OAuth:    "google",
 	Github_OAuth:    "github",
@@ -83,12 +83,11 @@ func GetProviders() []string {
 	providers := goth.GetProviders()
 	var m []string
 
-	for p, _ := range providers {
+	for p := range providers {
 		m = append(m, p)
 	}
 
 	return m
-
 }
 
 func NewAuthConfig(provs []string) {

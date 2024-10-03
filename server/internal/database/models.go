@@ -10,10 +10,10 @@ import (
 
 type User struct {
 	ID             int64
+	Createdat      pgtype.Timestamptz
+	Lastmodified   pgtype.Timestamptz
 	Name           string
 	Email          string
 	Provideruserid pgtype.Text
 	Imagesrc       pgtype.Text
-	Createdat      pgtype.Timestamp
-	Lastmodified   pgtype.Timestamp
 }
