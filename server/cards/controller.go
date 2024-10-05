@@ -27,7 +27,8 @@ func HandleCreateCard(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 	card, err := queries.CreateCard(
 		e.DbCtx,
 		database.CreateCardParams{
-			Query: pgtype.Text{String: iquery.query, Valid: true}, Userid: pgtype.Int8{Int64: iquery.userId, Valid: true},
+			Query:  pgtype.Text{String: iquery.query, Valid: true},
+			Userid: pgtype.Int8{Int64: iquery.userId, Valid: true},
 		})
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to create card: %v", err.Error())
