@@ -42,9 +42,11 @@ func HandleCreateCard(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 
 	e.Logger.Info(fmt.Sprintf("Card %d created successfully", card.ID))
 
+	responseData := DestructureDbCard(card)
+
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
-	e.WriteJsonResponse(w, card, "Card created successfully")
+	e.WriteJsonResponse(w, *responseData, "Card created successfully")
 
 	return nil
 }
