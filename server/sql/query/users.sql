@@ -14,19 +14,19 @@ ORDER BY name;
 
 -- name: CreateUser :one
 INSERT INTO users (
-	name, email, providerUserId, imageSrc, createdAt, lastModified
-) VALUES ($1, $2, $3, $4, $5, $6)
+	name, email, providerUserId, imageSrc
+) VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: UpdateUser :exec
 UPDATE users
-	set name=$2,
-	email=$3,
-	lastModified=$4
+	SET name = $2,
+	email = $3,
+	lastModified = timezone('utc', now())
 WHERE id = $1;
 
 -- name: UpdateProviderUserId :exec
 UPDATE users
-	SET providerUserId = $2
-	WHERE id = $1;
+	SET providerUserId = $2, lastModified = timezone('utc', now())
+WHERE id = $1;
 
