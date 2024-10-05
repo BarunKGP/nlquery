@@ -14,9 +14,6 @@ type ApiUser struct {
 	Email    string `json:"email"`
 	UserId   string `json:"id"`
 	ImageSrc string `json:"image"`
-	// SessionId string `json:"sessionId"`
-	// Username string `json:"username"`
-	// ProfileImageSrc string `json:"imageUrl"`
 }
 
 func (a *ApiUser) ToJson() (string, error) {

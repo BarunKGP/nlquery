@@ -8,7 +8,7 @@ INSERT INTO cards(query, userId)
 VALUES ($1, $2)
 RETURNING *;
 
--- name: GetUserCards: many
+-- name: GetUserCards :many
 SELECT (id, query, status, createdAt, lastModified)
 FROM cards  
 WHERE userId = $1;

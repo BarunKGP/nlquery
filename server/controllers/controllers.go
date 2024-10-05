@@ -28,18 +28,6 @@ func HandleHome(e *internal.Env, w http.ResponseWriter, r *http.Request, p httpr
 	return nil
 }
 
-func GetAuthProviders(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	authProviders := auth.GetProviders()
-
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(map[string][]string{"authProviders": authProviders})
-	if err != nil {
-		return internal.NewHttpError("Unable to get auth providers", http.StatusInternalServerError, r.URL.Path)
-	}
-
-	return nil
-}
-
 func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	var user internal.ApiUser
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -59,8 +47,6 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 			Email:          user.Email,
 			Imagesrc:       pgtype.Text{String: user.ImageSrc, Valid: true},
 			Provideruserid: pgtype.Text{String: user.UserId, Valid: true},
-			Createdat:      pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
-			Lastmodified:   pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
 		}
 
 		user, err := queries.CreateUser(e.DbCtx, userParams)
@@ -213,8 +199,6 @@ func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 			Email:          apiUser.Email,
 			Imagesrc:       pgtype.Text{String: apiUser.ImageSrc, Valid: true},
 			Provideruserid: pgtype.Text{String: apiUser.UserId, Valid: true},
-			Createdat:      pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
-			Lastmodified:   pgtype.Timestamptz{Time: time.Now().UTC(), InfinityModifier: pgtype.Finite, Valid: true},
 		}
 
 		user, err := queries.CreateUser(e.DbCtx, userParams)
@@ -234,10 +218,52 @@ func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 		e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(map[string]string{"message": "success"}); err != nil {
-		return fmt.Errorf("Unable to return success message")
+	// w.Header().Set("Content-Type", "application/json")
+	// if err := json.NewEncoder(w).Encode(map[string]string{"message": "success"}); err != nil {
+	// 	return fmt.Errorf("Unable to return success message")
+	// }
+	writeObjectToJson(w, map[string]string{"message": "success"})
+
+	return nil
+}
+
+func HandleCreateCard(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+	queries := database.New(e.DB)
+
+	type internalQuery struct {
+		query  string
+		userId int64
 	}
+
+	iquery := internalQuery{}
+	if err := json.NewDecoder(r.Body).Decode(&iquery); err != nil {
+		errMsg := fmt.Sprintf("Error decoding body: %v", err.Error())
+		httpErr := internal.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
+		e.Logger.Error(httpErr.Error())
+		return httpErr
+	}
+
+	e.Logger.Info(fmt.Sprintf("Received query from request body: %v", iquery))
+
+	card, err := queries.CreateCard(
+		e.DbCtx,
+		database.CreateCardParams{
+			Query: pgtype.Text{String: iquery.query, Valid: true}, Userid: pgtype.Int8{Int64: iquery.userId, Valid: true},
+		})
+	if err != nil {
+		errMsg := fmt.Sprintf("Unable to create card: %v", err.Error())
+		httpErr := internal.HttpStatusError{
+			Message: errMsg,
+			Status:  http.StatusInternalServerError,
+			Path:    r.URL.Path,
+		}
+		e.Logger.Error(httpErr.Error())
+	}
+
+	e.Logger.Info(fmt.Sprintf("Card %d created successfully", card.ID))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	e.WriteJsonResponse(w, card, "Card created successfully")
 
 	return nil
 }

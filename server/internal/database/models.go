@@ -5,8 +5,63 @@
 package database
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type CardStatus string
+
+const (
+	CardStatusActive  CardStatus = "active"
+	CardStatusDormant CardStatus = "dormant"
+	CardStatusDeleted CardStatus = "deleted"
+)
+
+func (e *CardStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CardStatus(s)
+	case string:
+		*e = CardStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CardStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCardStatus struct {
+	CardStatus CardStatus
+	Valid      bool // Valid is true if CardStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCardStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CardStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CardStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCardStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CardStatus), nil
+}
+
+type Card struct {
+	ID           int64
+	Createdat    pgtype.Timestamptz
+	Lastmodified pgtype.Timestamptz
+	Query        pgtype.Text
+	Userid       pgtype.Int8
+	Status       NullCardStatus
+}
 
 type User struct {
 	ID             int64

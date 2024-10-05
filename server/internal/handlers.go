@@ -57,17 +57,26 @@ type Env struct {
 	ClientAuthRedirect string
 }
 
-func (e *Env) WriteJsonResponse(w io.Writer, v map[string]any, msg string) {
-	if msg != "" {
-		_, ok := v["message"]
-		if ok {
-			log.Fatalf("Cannot add message: %s as value struct already contains key 'message'", msg)
-		}
-
-		v["message"] = msg
+func (e *Env) WriteJsonResponse(w io.Writer, v any, msg string) {
+	type responseObj struct {
+		message string
+		data    any
 	}
 
-	if err := json.NewEncoder(w).Encode(v); err != nil {
+	response := responseObj{data: v}
+
+	if msg != "" {
+		response.message = msg
+
+		// _, ok := v["message"]
+		// if ok {
+		// 	log.Fatalf("Cannot add message: %s as value struct already contains key 'message'", msg)
+		// }
+		//
+		// v["message"] = msg
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Fatalf("Error writing JSON response: %v", v)
 	}
 }
@@ -79,8 +88,8 @@ func (e *Env) Handle(fn ControllerFunc) httprouter.Handle {
 		logger := e.Logger
 
 		// CORS
-		w.Header().Add("Access-Control-Allow-Origin", e.ClientAuthRedirect)
 		// w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Origin", e.ClientAuthRedirect)
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
 		w.Header().Add(
 			"Access-Control-Allow-Headers",
@@ -96,12 +105,12 @@ func (e *Env) Handle(fn ControllerFunc) httprouter.Handle {
 			case IApiError:
 				logger.Error(err.Error())
 				w.WriteHeader(err.GetStatus())
-				e.WriteJsonResponse(w, make(map[string]any), err.Error())
+				e.WriteJsonResponse(w, nil, err.Error())
 
 			default:
 				logger.Error(fmt.Sprintf("Internal error occurred: %v", err.Error()))
 				w.WriteHeader(http.StatusInternalServerError)
-				e.WriteJsonResponse(w, make(map[string]any), "Uh oh... we need a minute")
+				e.WriteJsonResponse(w, nil, "Uh oh... we need a minute")
 			}
 		}
 	}

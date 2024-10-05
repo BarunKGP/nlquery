@@ -13,8 +13,8 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-	name, email, providerUserId, imageSrc, createdAt, lastModified
-) VALUES ($1, $2, $3, $4, $5, $6)
+	name, email, providerUserId, imageSrc
+) VALUES ($1, $2, $3, $4)
 RETURNING id, createdat, lastmodified, name, email, provideruserid, imagesrc
 `
 
@@ -23,8 +23,6 @@ type CreateUserParams struct {
 	Email          string
 	Provideruserid pgtype.Text
 	Imagesrc       pgtype.Text
-	Createdat      pgtype.Timestamptz
-	Lastmodified   pgtype.Timestamptz
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -33,8 +31,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Email,
 		arg.Provideruserid,
 		arg.Imagesrc,
-		arg.Createdat,
-		arg.Lastmodified,
 	)
 	var i User
 	err := row.Scan(
@@ -126,8 +122,8 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 
 const updateProviderUserId = `-- name: UpdateProviderUserId :exec
 UPDATE users
-	SET providerUserId = $2
-	WHERE id = $1
+	SET providerUserId = $2, lastModified = timezone('utc', now())
+WHERE id = $1
 `
 
 type UpdateProviderUserIdParams struct {
@@ -142,25 +138,19 @@ func (q *Queries) UpdateProviderUserId(ctx context.Context, arg UpdateProviderUs
 
 const updateUser = `-- name: UpdateUser :exec
 UPDATE users
-	set name=$2,
-	email=$3,
-	lastModified=$4
+	SET name = $2,
+	email = $3,
+	lastModified = timezone('utc', now())
 WHERE id = $1
 `
 
 type UpdateUserParams struct {
-	ID           int64
-	Name         string
-	Email        string
-	Lastmodified pgtype.Timestamptz
+	ID    int64
+	Name  string
+	Email string
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.Exec(ctx, updateUser,
-		arg.ID,
-		arg.Name,
-		arg.Email,
-		arg.Lastmodified,
-	)
+	_, err := q.db.Exec(ctx, updateUser, arg.ID, arg.Name, arg.Email)
 	return err
 }
