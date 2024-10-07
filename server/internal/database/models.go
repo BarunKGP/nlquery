@@ -11,56 +11,66 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type CardStatus string
+type ThreadStatus string
 
 const (
-	CardStatusActive  CardStatus = "active"
-	CardStatusDormant CardStatus = "dormant"
-	CardStatusDeleted CardStatus = "deleted"
+	ThreadStatusActive  ThreadStatus = "active"
+	ThreadStatusDormant ThreadStatus = "dormant"
+	ThreadStatusDeleted ThreadStatus = "deleted"
 )
 
-func (e *CardStatus) Scan(src interface{}) error {
+func (e *ThreadStatus) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = CardStatus(s)
+		*e = ThreadStatus(s)
 	case string:
-		*e = CardStatus(s)
+		*e = ThreadStatus(s)
 	default:
-		return fmt.Errorf("unsupported scan type for CardStatus: %T", src)
+		return fmt.Errorf("unsupported scan type for ThreadStatus: %T", src)
 	}
 	return nil
 }
 
-type NullCardStatus struct {
-	CardStatus CardStatus
-	Valid      bool // Valid is true if CardStatus is not NULL
+type NullThreadStatus struct {
+	ThreadStatus ThreadStatus
+	Valid        bool // Valid is true if ThreadStatus is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullCardStatus) Scan(value interface{}) error {
+func (ns *NullThreadStatus) Scan(value interface{}) error {
 	if value == nil {
-		ns.CardStatus, ns.Valid = "", false
+		ns.ThreadStatus, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.CardStatus.Scan(value)
+	return ns.ThreadStatus.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullCardStatus) Value() (driver.Value, error) {
+func (ns NullThreadStatus) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.CardStatus), nil
+	return string(ns.ThreadStatus), nil
 }
 
-type Card struct {
+type Thread struct {
 	ID           int64
 	Createdat    pgtype.Timestamptz
 	Lastmodified pgtype.Timestamptz
-	Query        pgtype.Text
+	Query        string
 	Userid       pgtype.Int8
-	Status       NullCardStatus
+	Status       NullThreadStatus
+	Threadfileid pgtype.Int8
+}
+
+type ThreadFile struct {
+	ID           int64
+	Userid       pgtype.Int8
+	Createdat    pgtype.Timestamptz
+	Lastmodified pgtype.Timestamptz
+	Columns      string
+	Types        string
 }
 
 type User struct {
