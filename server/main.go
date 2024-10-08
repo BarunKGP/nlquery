@@ -118,12 +118,6 @@ func main() {
 
 	router.Get("/", env.Handle(controllers.HandleHome))
 
-	// Auth
-	// router.Get("/auth", env.Handle(controllers.GetAuthProviders))
-	// router.Get("/auth/:provider", env.Handle(controllers.HandleSignin))
-	// router.Get("/auth/:provider/callback", env.Handle(controllers.HandleAuthCallback))
-	// router.Get("/logout/:provider", env.Handle(controllers.HandleLogout))
-
 	// Updated Auth - Go + Auth.js
 	router.Post("/auth/signin", env.Handle(controllers.HandleSignin))
 	router.Post("/auth/logout", env.HandleProtected(controllers.HandleLogout))
@@ -131,12 +125,6 @@ func main() {
 	// Users
 	router.Get("/user/:id", env.HandleProtected(controllers.HandleGetUser))
 	router.Post("/user", env.HandleProtected(controllers.HandleCreateUser))
-
-	// router.Get("/auth/:provider/callback", env.Handle(controllers.CompleteAuth))
-	// router.Get("/", internal.Handle(internal.Handler{env, controllers.HandleHome}))
-	// router.Post("/auth/logout", middleware(controllers.HandleSignout, logger))
-	// router.Post("/auth/signup", middleware(controllers.HandleSignup, logger))
-	// router.Patch("/user/:id", internal.Handle(internal.Handler{Env: env, H: controllers.HandleGetUser}))
 
 	env.Logger.Info("Starting http server")
 	log.Fatal(http.ListenAndServe(":8001", router))

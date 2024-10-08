@@ -21,7 +21,7 @@ type apiRequestObj struct {
 	Query string `json:"query"`
 	//! We will have to get the user's identity separately
 	// Use the `auth_token` from the cookie we created
-	Id           int64           `json:"userId"`
+	Id           int64           `json:"id"`
 	FileDetails  *apiRequestFile `json:"file,omitempty"`
 	ThreadFileId int64           `json:"threadFileId"`
 }
@@ -50,10 +50,7 @@ func parseFileDetails(fileobj []string, sep string) (string, error) {
 func HandleCreateThread(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	// Ensure user is logged in
 	// Should this be handled in the Protected handler?
-	queries := database.New(e.DB)
-
 	var jsonBody apiRequestObj
-
 	if err := json.NewDecoder(r.Body).Decode(&jsonBody); err != nil {
 		errMsg := fmt.Sprintf("Error decoding body: %v", err.Error())
 		httpErr := internal.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
@@ -62,8 +59,8 @@ func HandleCreateThread(e *internal.Env, w http.ResponseWriter, r *http.Request,
 	}
 	e.Logger.Info(fmt.Sprintf("Received query from request body: %v", jsonBody))
 
+	queries := database.New(e.DB)
 	var ctfParams database.CreateThreadParams
-
 	//* NOTE: If user provides a new file or alters file schema in the
 	// middle of a thread, it will result in a new threadFile being
 	// created. Essentially, only one of the branches work at a time
