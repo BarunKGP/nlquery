@@ -13,13 +13,19 @@ import (
 
 	"github.com/BarunKGP/nlquery/internal/auth"
 	"github.com/BarunKGP/nlquery/internal/database"
+	// "github.com/BarunKGP/nlquery/internal/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 )
 
+type PersistentConn interface {
+	database.DBTX
+	Close(context.Context) error
+}
+
 type Env struct {
-	DB     database.DBTX
+	DB     PersistentConn
 	Port   uint16
 	Host   string
 	Logger *slog.Logger
@@ -51,7 +57,6 @@ func InitEnv() *Env {
 	if err != nil {
 		log.Fatal("Unable to connect to database", err)
 	}
-	defer conn.Close(ctx)
 
 	host, ok := os.LookupEnv("HOST")
 	if !ok {
@@ -77,7 +82,7 @@ func InitEnv() *Env {
 }
 
 func (e *Env) GetPortString() string {
-	return fmt.Sprintf(":%s", e.Port)
+	return fmt.Sprintf(":%d", e.Port)
 }
 
 type responseObj struct {

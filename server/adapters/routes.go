@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -101,7 +102,7 @@ func InitRoutes() map[*httpRoute]internal.ControllerFunc {
 		"GET /user/:id": isProtected(controllers.HandleGetUser),
 	}
 
-	var res map[*httpRoute]internal.ControllerFunc
+	res := make(map[*httpRoute]internal.ControllerFunc)
 	for rs, cf := range r {
 		hr, err := ParseRoute(rs)
 		if err != nil {
@@ -109,6 +110,7 @@ func InitRoutes() map[*httpRoute]internal.ControllerFunc {
 		}
 		res[hr] = cf
 	}
+	slog.Debug("parsed routes")
 	return res
 }
 
