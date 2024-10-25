@@ -14,14 +14,11 @@ type Gateway struct {
 	AcceptedOrigins []string
 	// prefix applied to all routes in the gateway
 	ApiPrefix string
-	// port on which gateway will be served
-	// Port string
 
 	// store for passed in env variables
 	env *internal.Env
 	// internal router for http requests
 	router *internal.ApiRouter
-	// router http.Handler
 }
 
 func NewGateway(prefix string, origins []string) *Gateway {
