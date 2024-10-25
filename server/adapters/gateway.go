@@ -39,13 +39,16 @@ func (g *Gateway) WithEnv(e *internal.Env) *Gateway {
 }
 
 func (g *Gateway) Init() error {
+	// Initialize env vars
 	g.env = internal.InitEnv()
-	g.router = internal.NewApiRouter(g.ApiPrefix)
+	defer g.env.DB.Close(g.env.DbCtx)
 
+	// Initialize router and routes
+	g.router = internal.NewApiRouter(g.ApiPrefix)
 	g.router.EnableCors(g.AcceptedOrigins)
 	routes := InitRoutes()
 	g.injectRoutes(routes)
-	// slog.Debug(fmt.Sprintf("app port: %s", g.env.GetPortString()))
+
 	return http.ListenAndServe(g.env.GetPortString(), g.router)
 }
 
