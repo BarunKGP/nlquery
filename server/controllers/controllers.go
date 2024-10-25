@@ -75,7 +75,7 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 	if err != nil {
 		return fmt.Errorf("Error creating token: %v", err)
 	}
-	e.Logger.Info(fmt.Sprintf("Returning JWT: %v", token))
+	slog.Info(fmt.Sprintf("Returning JWT: %v", token))
 
 	// TODO: Write signed in user details to db
 

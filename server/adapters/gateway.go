@@ -42,10 +42,10 @@ func (g *Gateway) Init() error {
 	g.env = internal.InitEnv()
 	g.router = internal.NewApiRouter(g.ApiPrefix)
 
+	g.router.EnableCors(g.AcceptedOrigins)
 	routes := InitRoutes()
 	g.injectRoutes(routes)
-	g.router.EnableCors(g.AcceptedOrigins)
-
+	// slog.Debug(fmt.Sprintf("app port: %s", g.env.GetPortString()))
 	return http.ListenAndServe(g.env.GetPortString(), g.router)
 }
 

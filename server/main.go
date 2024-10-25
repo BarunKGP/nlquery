@@ -11,7 +11,7 @@ import (
 func main() {
 	gateway := adapters.NewGateway("/api/v1", []string{"http://localhost:3000"})
 	if err := gateway.Init(); err != nil {
-		log.Fatal("Could not start gateway")
+		log.Fatalf("Could not start gateway: %v", err)
 	}
 
 	// env := internal.InitEnv()
