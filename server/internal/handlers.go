@@ -12,20 +12,14 @@ import (
 	"strconv"
 
 	"github.com/BarunKGP/nlquery/internal/auth"
-	"github.com/BarunKGP/nlquery/internal/database"
-	// "github.com/BarunKGP/nlquery/internal/database"
+	"github.com/BarunKGP/nlquery/ports"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 )
 
-type PersistentConn interface {
-	database.DBTX
-	Close(context.Context) error
-}
-
 type Env struct {
-	DB     PersistentConn
+	DB     ports.PersistentConn
 	Port   uint16
 	Host   string
 	Logger *slog.Logger
