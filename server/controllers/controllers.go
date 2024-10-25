@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"context"
+	// "context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -14,7 +14,7 @@ import (
 	"github.com/BarunKGP/nlquery/internal/database"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
-	"github.com/markbates/goth/gothic"
+	// "github.com/markbates/goth/gothic"
 )
 
 func HandleHome(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
@@ -22,9 +22,20 @@ func HandleHome(e *internal.Env, w http.ResponseWriter, r *http.Request, p httpr
 	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Hello from nlQuery!"}); err != nil {
 		return fmt.Errorf("Error encoding message")
 	}
-
 	e.Logger.Info("Hello from nlQuery\n")
+	return nil
+}
 
+func HandleTest(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+	w.Header().Set("Content-Type", "application/json")
+	path := r.URL.Path
+	host := r.URL.Hostname()
+	if err := json.
+		NewEncoder(w).
+		Encode(map[string]string{"message": "Test route", "path": path, "host": host}); err != nil {
+		return fmt.Errorf("Error encoding message")
+	}
+	e.Logger.Debug("Hello from nlQuery: Test route\n")
 	return nil
 }
 
@@ -39,7 +50,6 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 	// Check if user exists in db
 	queries := database.New(e.DB)
 
-	// if _, err := queries.GetUserByProviderUserId(e.DbCtx, pgtype.Text{String: user.UserId, Valid: true}); err != nil {
 	if _, err := queries.GetUserByEmail(e.DbCtx, user.Email); err != nil {
 		// User not found. Create new user
 		userParams := database.CreateUserParams{
@@ -58,7 +68,6 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 			}
 		}
 		e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
-
 	}
 
 	// Create token
@@ -66,7 +75,6 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 	if err != nil {
 		return fmt.Errorf("Error creating token: %v", err)
 	}
-
 	e.Logger.Info(fmt.Sprintf("Returning JWT: %v", token))
 
 	// TODO: Write signed in user details to db
@@ -79,7 +87,6 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 		Secure:   false, // TODO: change to true in prod!,
 		Expires:  time.Now().AddDate(1, 0, 0),
 	}
-
 	http.SetCookie(w, &cookie)
 	e.Logger.Info(fmt.Sprintf("Cookie written successfully: %+v", cookie))
 
@@ -92,30 +99,30 @@ func HandleSignin(e *internal.Env, w http.ResponseWriter, r *http.Request, p htt
 	return nil
 }
 
-func HandleAuthCallback(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	provider := p.ByName("provider")
-	r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
-
-	gothUser, err := gothic.CompleteUserAuth(w, r)
-	if err != nil {
-		return internal.NewHttpError("Unable to complete authentication", http.StatusInternalServerError, r.URL.Path)
-	}
-
-	user := internal.ApiUser{
-		Name:   gothUser.Name,
-		Email:  gothUser.Email,
-		UserId: gothUser.UserID,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		return fmt.Errorf("Error converting user: %v to API JSON response", gothUser)
-	}
-
-	http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, gothUser.UserID), http.StatusFound)
-
-	return nil
-}
+// func HandleAuthCallback(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+// 	provider := p.ByName("provider")
+// 	r = r.WithContext(context.WithValue(context.Background(), "provider", provider))
+//
+// 	gothUser, err := gothic.CompleteUserAuth(w, r)
+// 	if err != nil {
+// 		return internal.NewHttpError("Unable to complete authentication", http.StatusInternalServerError, r.URL.Path)
+// 	}
+//
+// 	user := internal.ApiUser{
+// 		Name:   gothUser.Name,
+// 		Email:  gothUser.Email,
+// 		UserId: gothUser.UserID,
+// 	}
+//
+// 	w.Header().Set("Content-Type", "application/json")
+// 	if err := json.NewEncoder(w).Encode(user); err != nil {
+// 		return fmt.Errorf("Error converting user: %v to API JSON response", gothUser)
+// 	}
+//
+// 	http.Redirect(w, r, fmt.Sprint("%s/user/%s", e.ClientAuthRedirect, gothUser.UserID), http.StatusFound)
+//
+// 	return nil
+// }
 
 func HandleLogout(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	// provider := p.ByName("provider")
@@ -203,19 +210,20 @@ func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 
 		user, err := queries.CreateUser(e.DbCtx, userParams)
 		if err != nil {
-			errMsg := fmt.Sprintf("Unable to create user: %v", err.Error())
-			httpErr := internal.HttpStatusError{
-				Message: errMsg,
-				Status:  http.StatusInternalServerError,
-				Path:    r.URL.Path,
-			}
-			e.Logger.Error(httpErr.Error())
-			return httpErr
+			errMsg := "Unable to create user"
+			e.Logger.Error(errMsg, "user_params", fmt.Sprint(userParams))
+			return internal.NewHttpError(
+				errMsg, http.StatusInternalServerError, r.URL.Path,
+			)
 		} else {
-			e.Logger.Info(fmt.Sprintf("User with provider ID: %s exists", user.Provideruserid))
+			e.Logger.Info(
+				"Found user",
+				"providerId",
+				fmt.Sprint(user.Provideruserid),
+			)
 		}
 
-		e.Logger.Info(fmt.Sprintf("User created successfully: %+v", user))
+		e.Logger.Info("User created successfully", "user", fmt.Sprintf("%+v", user))
 	}
 
 	// w.Header().Set("Content-Type", "application/json")
@@ -223,47 +231,6 @@ func HandleCreateUser(e *internal.Env, w http.ResponseWriter, r *http.Request, p
 	// 	return fmt.Errorf("Unable to return success message")
 	// }
 	writeObjectToJson(w, map[string]string{"message": "success"})
-
-	return nil
-}
-
-func HandleCreateCard(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	queries := database.New(e.DB)
-
-	type internalQuery struct {
-		query  string
-		userId int64
-	}
-
-	iquery := internalQuery{}
-	if err := json.NewDecoder(r.Body).Decode(&iquery); err != nil {
-		errMsg := fmt.Sprintf("Error decoding body: %v", err.Error())
-		httpErr := internal.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
-		e.Logger.Error(httpErr.Error())
-		return httpErr
-	}
-
-	e.Logger.Info(fmt.Sprintf("Received query from request body: %v", iquery))
-
-	card, err := queries.CreateCard(
-		e.DbCtx,
-		database.CreateCardParams{
-			Query: pgtype.Text{String: iquery.query, Valid: true}, Userid: pgtype.Int8{Int64: iquery.userId, Valid: true},
-		})
-	if err != nil {
-		errMsg := fmt.Sprintf("Unable to create card: %v", err.Error())
-		httpErr := internal.HttpStatusError{
-			Message: errMsg,
-			Status:  http.StatusInternalServerError,
-			Path:    r.URL.Path,
-		}
-		e.Logger.Error(httpErr.Error())
-	}
-
-	e.Logger.Info(fmt.Sprintf("Card %d created successfully", card.ID))
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	e.WriteJsonResponse(w, card, "Card created successfully")
 
 	return nil
 }

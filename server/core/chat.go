@@ -3,17 +3,13 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/BarunKGP/nlquery/internal"
-	_ "github.com/joho/godotenv"
-
 	"github.com/gorilla/websocket"
 )
-
-var logger = internal.CreateLogger()
 
 const (
 	writeWait      = 10 * time.Second
@@ -81,7 +77,7 @@ func (c *Client) readPump() error {
 	c.conn.SetReadLimit(maxMessageSise)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error {
-		logger.Debug(fmt.Sprintf("Pong received on client %d. Incrementing read deadline by %s", c.Id, pongWait))
+		slog.Debug(fmt.Sprintf("Pong received on client %d. Incrementing read deadline by %s", c.Id, pongWait))
 		c.conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
@@ -90,7 +86,7 @@ func (c *Client) readPump() error {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				logger.Debug(err.Error())
+				slog.Debug(err.Error())
 				return fmt.Errorf("Client closed unexpectedly!")
 			}
 			break
@@ -144,7 +140,7 @@ func (c *Client) writePump() {
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				logger.Error("Error sending ping: %v", err)
+				slog.Error("Error sending ping: %v", err)
 				return
 			}
 		}
@@ -177,7 +173,7 @@ func (h *ChatHub) Run() {
 				delete(h.clients, client)
 				close(client.send)
 			} else {
-				logger.Warn("client not found: nothing to unregister", "clientId", client.Id)
+				slog.Warn("client not found: nothing to unregister", "clientId", client.Id)
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {

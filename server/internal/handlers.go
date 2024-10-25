@@ -8,94 +8,114 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/BarunKGP/nlquery/internal/auth"
+	"github.com/BarunKGP/nlquery/internal/database"
 	"github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 )
 
-type IApiError interface {
-	Error() string
-	GetStatus() int
+type Env struct {
+	DB     database.DBTX
+	Port   uint16
+	Host   string
+	Logger *slog.Logger
+	DbCtx  context.Context
 }
 
-type HttpStatusError struct {
-	Message string
-	Status  int
-	Path    string
+func getDbUrl() string {
+	return fmt.Sprintf(
+		"postgres://%v:%v@%v:%v/%v?sslmode=disable",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
 }
 
-func (err HttpStatusError) Error() string {
-	return fmt.Sprintf("Error: %v at %v: returning HTTP %d",
-		err.Message, err.Path, err.Status)
-}
+func InitEnv() *Env {
+	if e := godotenv.Load(); e != nil {
+		log.Fatal("Unable to read environment variables")
+	}
+	dbUrl := getDbUrl()
+	// TODO: Change level based on env: debug for dev, info for stg, warn for prod
+	logger := CreateLogger(slog.LevelDebug)
+	logger.Debug("Connecting to postgres db with dbUrl: " + dbUrl)
 
-func (err HttpStatusError) GetStatus() int {
-	return err.Status
-}
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, dbUrl)
+	if err != nil {
+		log.Fatal("Unable to connect to database", err)
+	}
+	defer conn.Close(ctx)
 
-func (err HttpStatusError) GetPath() string {
-	return err.Path
-}
+	host, ok := os.LookupEnv("HOST")
+	if !ok {
+		host = "localhost"
+	}
+	// TODO: Make this programmatic
+	auth.NewAuthConfig([]string{"google", "github"})
 
-func NewHttpError(errMsg string, status int, path string) HttpStatusError {
-	// Build a new HttpStatusError
-	// This can be written to a logger using `httpErr.Error()` or returned as an error value
-	return HttpStatusError{
-		Message: errMsg,
-		Status:  status,
-		Path:    path,
+	var port uint16
+	if num64, err := strconv.ParseInt(os.Getenv("PORT"), 10, 16); err == nil {
+		port = uint16(num64)
+	} else {
+		panic("Could not read port")
+	}
+
+	return &Env{
+		DB:     conn,
+		Port:   port,
+		Host:   host,
+		Logger: logger,
+		DbCtx:  ctx,
 	}
 }
 
-type Env struct {
-	DB                 *pgx.Conn
-	Port               string
-	Host               string
-	Logger             *slog.Logger
-	DbCtx              context.Context
-	ClientAuthRedirect string
+func (e *Env) GetPortString() string {
+	return fmt.Sprintf(":%s", e.Port)
+}
+
+type responseObj struct {
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
 }
 
 func (e *Env) WriteJsonResponse(w io.Writer, v any, msg string) {
-	type responseObj struct {
-		message string
-		data    any
-	}
-
-	response := responseObj{data: v}
-
+	response := responseObj{Data: v}
 	if msg != "" {
-		response.message = msg
-
-		// _, ok := v["message"]
-		// if ok {
-		// 	log.Fatalf("Cannot add message: %s as value struct already contains key 'message'", msg)
-		// }
-		//
-		// v["message"] = msg
+		response.Message = msg
 	}
-
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Fatalf("Error writing JSON response: %v", v)
+		log.Fatalf("Error writing JSON response: %+v", response)
 	}
 }
 
 type ControllerFunc func(e *Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error
 
-func (e *Env) Handle(fn ControllerFunc) httprouter.Handle {
+// ! TO DEPRECATE ALL BELOW
+// Use adapters/gateway.go instead
+func (e *Env) Handle(fn ControllerFunc, protected bool) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		logger := e.Logger
 
 		// CORS
-		// w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.Header().Add("Access-Control-Allow-Origin", e.ClientAuthRedirect)
+		w.Header().Add("Access-Control-Allow-Origin", "http://localhost:3000/")
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
 		w.Header().Add(
 			"Access-Control-Allow-Headers",
 			"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With",
 		)
 		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+
+		if protected && !isProtected(r) {
+			logger.Error("Unauthenticated: Please log in to access this")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		}
 
 		if err := fn(e, w, r, p); err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -104,9 +124,7 @@ func (e *Env) Handle(fn ControllerFunc) httprouter.Handle {
 			switch err := err.(type) {
 			case IApiError:
 				logger.Error(err.Error())
-				w.WriteHeader(err.GetStatus())
-				e.WriteJsonResponse(w, nil, err.Error())
-
+				err.WriteJsonResponse(w)
 			default:
 				logger.Error(fmt.Sprintf("Internal error occurred: %v", err.Error()))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -114,6 +132,18 @@ func (e *Env) Handle(fn ControllerFunc) httprouter.Handle {
 			}
 		}
 	}
+}
+
+func isProtected(r *http.Request) bool {
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		return false
+	}
+	tokenString := cookie.Value
+	if err := auth.VerifyToken(tokenString); err != nil {
+		return false
+	}
+	return true
 }
 
 func (e *Env) HandleProtected(fn ControllerFunc) httprouter.Handle {
@@ -136,35 +166,56 @@ func (e *Env) HandleProtected(fn ControllerFunc) httprouter.Handle {
 			switch err := err.(type) {
 			case IApiError:
 				logger.Error(err.Error())
-				http.Error(w, err.Error(), err.GetStatus())
+				err.WriteJsonResponse(w)
 			default:
 				logger.Error(fmt.Sprintf("Internal error occurred: %v", err.Error()))
-				http.Error(w, "Uh oh... we need a minute :(", http.StatusInternalServerError)
+				w.WriteHeader(http.StatusInternalServerError)
+				e.WriteJsonResponse(w, nil, "Uh oh... we need a minute")
 			}
 		}
 	}
 }
 
-// type Handler struct {
-// 	*Env
-// 	H func(e *Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error
-// }
-//
-// func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-// 	err := h.H(h.Env, w, r, p)
-// 	if err != nil {
-// 		logger := h.Logger
-// 		switch e := err.(type) {
-// 		case IApiError:
-// 			logger.Error(e.Error())
-// 			http.Error(w, e.Error(), e.GetStatus())
-// 		default:
-// 			logger.Error(fmt.Sprintf("Unknown error: %v", e.Error()))
-// 			http.Error(w, "Unknown error occurred", http.StatusInternalServerError)
-// 		}
-// 	}
-// }
-//
-// func Handle(h Handler) httprouter.Handle {
-// 	return h.ServeHTTP
-// }
+type IApiError interface {
+	Error() string
+	GetStatus() int
+	WriteJsonResponse(http.ResponseWriter)
+}
+
+type HttpStatusError struct {
+	Message         string `json:"error"`
+	DetailedMessage string
+	Status          int    `json:"status"`
+	Path            string `json:"path"`
+}
+
+func (err HttpStatusError) Error() string {
+	return fmt.Sprintf("Error: %v at %v: returning HTTP %d",
+		err.Message, err.Path, err.Status)
+}
+
+func (err HttpStatusError) GetStatus() int {
+	return err.Status
+}
+
+func (err HttpStatusError) GetPath() string {
+	return err.Path
+}
+
+func (err HttpStatusError) WriteJsonResponse(w http.ResponseWriter) {
+	w.WriteHeader(err.Status)
+	w.Header().Set("Content-Type", "application/json")
+	if e := json.NewEncoder(w).Encode(&err); e != nil {
+		log.Fatalf("Error writing JSON response: %v", err)
+	}
+}
+
+func NewHttpError(errMsg string, status int, path string) HttpStatusError {
+	// Build a new HttpStatusError
+	// This can be written to a logger using `httpErr.Error()` or returned as an error value
+	return HttpStatusError{
+		Message: errMsg,
+		Status:  status,
+		Path:    path,
+	}
+}
