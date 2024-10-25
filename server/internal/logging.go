@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func CreateLogger() *slog.Logger {
+func CreateLogger(level slog.Level) *slog.Logger {
 	var writer io.Writer
 
 	// Add a MultiWriter if LOG_FILE is defined
@@ -27,7 +27,7 @@ func CreateLogger() *slog.Logger {
 	}
 
 	handlerOpts := &slog.HandlerOptions{
-		Level:     slog.LevelDebug,
+		Level:     level,
 		AddSource: true,
 	}
 	logger := slog.New(slog.NewJSONHandler(writer, handlerOpts))
