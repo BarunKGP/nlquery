@@ -11,11 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type ApiObject interface {
-	ToJson() (string, error)
-	FromJson(string) (ApiObject, error)
-}
-
 type ApiUser struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
