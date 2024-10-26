@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/BarunKGP/nlquery/adapters"
-	"github.com/BarunKGP/nlquery/core"
 	"github.com/BarunKGP/nlquery/core/auth"
 	"github.com/BarunKGP/nlquery/ports"
 	"github.com/julienschmidt/httprouter"
@@ -42,7 +41,7 @@ func HandleTest(e ports.EnvReader, w http.ResponseWriter, r *http.Request, p htt
 func HandleSignin(e ports.EnvReader, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	user, err := adapters.NewApiUser().FromHttp(r)
 	if err != nil {
-		return core.NewHttpError("Unable to parse request body", http.StatusBadRequest, r.URL.Path)
+		return adapters.NewHttpError("Unable to parse request body", http.StatusBadRequest, r.URL.Path)
 	}
 	slog.Info("Signin attempt", "user", user)
 
@@ -87,7 +86,7 @@ func HandleSignin(e ports.EnvReader, w http.ResponseWriter, r *http.Request, p h
 //
 // 	gothUser, err := gothic.CompleteUserAuth(w, r)
 // 	if err != nil {
-// 		return core.NewHttpError("Unable to complete authentication", http.StatusInternalServerError, r.URL.Path)
+// 		return adapters.NewHttpError("Unable to complete authentication", http.StatusInternalServerError, r.URL.Path)
 // 	}
 //
 // 	user := core.ApiUser{
@@ -131,7 +130,7 @@ func HandleGetUser(e ports.EnvReader, w http.ResponseWriter, r *http.Request, p 
 	id, err := strconv.ParseInt(p.ByName("id"), 10, 64)
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to convert id: %v to int: %v", p.ByName("id"), err.Error())
-		httpErr := core.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
+		httpErr := adapters.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
 		slog.Error(httpErr.Error())
 		return httpErr
 	}
@@ -139,7 +138,7 @@ func HandleGetUser(e ports.EnvReader, w http.ResponseWriter, r *http.Request, p 
 	user, err := queries.GetUser(r.Context(), id)
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to fetch user %v from db: %v", id, err.Error())
-		httpErr := core.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
+		httpErr := adapters.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
 		slog.Error(httpErr.Error())
 		return httpErr
 	}
@@ -167,7 +166,7 @@ func HandleCreateUser(e ports.EnvReader, w http.ResponseWriter, r *http.Request,
 	apiUser, err := adapters.NewApiUser().FromHttp(r)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error decoding body: %v", err.Error())
-		httpErr := core.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
+		httpErr := adapters.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
 		slog.Error(httpErr.Error())
 		return httpErr
 	}
