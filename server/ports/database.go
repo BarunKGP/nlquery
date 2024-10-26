@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/BarunKGP/nlquery/internal/database"
+	"github.com/BarunKGP/nlquery/core/database"
 )
 
 type PersistentConn interface {
