@@ -11,7 +11,6 @@ import (
 	"github.com/BarunKGP/nlquery/adapters"
 	"github.com/BarunKGP/nlquery/ports"
 	"github.com/julienschmidt/httprouter"
-	// "github.com/markbates/goth/gothic"
 )
 
 func HandleHome(e ports.EnvReader, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
