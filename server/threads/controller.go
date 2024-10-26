@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/BarunKGP/nlquery/internal"
-	"github.com/BarunKGP/nlquery/internal/database"
+	"github.com/BarunKGP/nlquery/core"
+	"github.com/BarunKGP/nlquery/core/database"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 )
@@ -47,13 +47,13 @@ func parseFileDetails(fileobj []string, sep string) (string, error) {
 	return columnData, nil
 }
 
-func HandleCreateThread(e *internal.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+func HandleCreateThread(e *core.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	// Ensure user is logged in
 	// Should this be handled in the Protected handler?
 	var jsonBody apiRequestObj
 	if err := json.NewDecoder(r.Body).Decode(&jsonBody); err != nil {
 		errMsg := fmt.Sprintf("Error decoding body: %v", err.Error())
-		httpErr := internal.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
+		httpErr := core.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
 		e.Logger.Error(httpErr.Error())
 		return httpErr
 	}
@@ -68,7 +68,7 @@ func HandleCreateThread(e *internal.Env, w http.ResponseWriter, r *http.Request,
 		// We are adding a new query to an existing thread
 		if jsonBody.ThreadFileId == 0 {
 			//* We start db IDs from 1
-			httpErr := internal.NewHttpError("Invalid threadFieldId", http.StatusBadRequest, r.URL.Path)
+			httpErr := core.NewHttpError("Invalid threadFieldId", http.StatusBadRequest, r.URL.Path)
 			e.Logger.Error(httpErr.Error())
 			return httpErr
 		}
@@ -98,7 +98,7 @@ func HandleCreateThread(e *internal.Env, w http.ResponseWriter, r *http.Request,
 		)
 		if err != nil {
 			errMsg := fmt.Sprintf("Unable to create thread file: %v", err.Error())
-			httpErr := internal.HttpStatusError{
+			httpErr := core.HttpStatusError{
 				Message: errMsg,
 				Status:  http.StatusInternalServerError,
 				Path:    r.URL.Path,
@@ -117,7 +117,7 @@ func HandleCreateThread(e *internal.Env, w http.ResponseWriter, r *http.Request,
 	thread, err := queries.CreateThread(e.DbCtx, ctfParams)
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to create thread file: %v", err.Error())
-		httpErr := internal.HttpStatusError{
+		httpErr := core.HttpStatusError{
 			Message: errMsg,
 			Status:  http.StatusInternalServerError,
 			Path:    r.URL.Path,
