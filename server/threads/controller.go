@@ -3,11 +3,13 @@ package threads
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
-	"github.com/BarunKGP/nlquery/core"
+	"github.com/BarunKGP/nlquery/adapters"
 	"github.com/BarunKGP/nlquery/core/database"
+	"github.com/BarunKGP/nlquery/ports"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 )
@@ -47,19 +49,19 @@ func parseFileDetails(fileobj []string, sep string) (string, error) {
 	return columnData, nil
 }
 
-func HandleCreateThread(e *core.Env, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+func HandleCreateThread(e ports.EnvReader, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
 	// Ensure user is logged in
 	// Should this be handled in the Protected handler?
-	var jsonBody apiRequestObj
-	if err := json.NewDecoder(r.Body).Decode(&jsonBody); err != nil {
+	user, err := adapters.NewApiUser().FromHttp(r)
+	if err != nil {
 		errMsg := fmt.Sprintf("Error decoding body: %v", err.Error())
-		httpErr := core.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
-		e.Logger.Error(httpErr.Error())
+		httpErr := adapters.NewHttpError(errMsg, http.StatusInternalServerError, r.URL.Path)
+		slog.Error(httpErr.Error())
 		return httpErr
 	}
-	e.Logger.Info(fmt.Sprintf("Received query from request body: %v", jsonBody))
+	slog.Info(fmt.Sprintf("Received query from request body: %v", jsonBody))
 
-	queries := database.New(e.DB)
+	dbFactory := e.GetDbFactory()
 	var ctfParams database.CreateThreadParams
 	//* NOTE: If user provides a new file or alters file schema in the
 	// middle of a thread, it will result in a new threadFile being
@@ -68,8 +70,8 @@ func HandleCreateThread(e *core.Env, w http.ResponseWriter, r *http.Request, p h
 		// We are adding a new query to an existing thread
 		if jsonBody.ThreadFileId == 0 {
 			//* We start db IDs from 1
-			httpErr := core.NewHttpError("Invalid threadFieldId", http.StatusBadRequest, r.URL.Path)
-			e.Logger.Error(httpErr.Error())
+			httpErr := adapters.NewHttpError("Invalid threadFieldId", http.StatusBadRequest, r.URL.Path)
+			slog.Error(httpErr.Error())
 			return httpErr
 		}
 
@@ -89,8 +91,8 @@ func HandleCreateThread(e *core.Env, w http.ResponseWriter, r *http.Request, p h
 			return fmt.Errorf("Unable to parse file details: %v", err)
 		}
 
-		threadFileId, err := queries.CreateThreadFile(
-			e.DbCtx,
+		threadFileId, err := dbFactory.CreateThreadFile(
+			r.Context(),
 			database.CreateThreadFileParams{
 				Columns: columnNames,
 				Types:   columnTypes,
@@ -98,12 +100,12 @@ func HandleCreateThread(e *core.Env, w http.ResponseWriter, r *http.Request, p h
 		)
 		if err != nil {
 			errMsg := fmt.Sprintf("Unable to create thread file: %v", err.Error())
-			httpErr := core.HttpStatusError{
+			httpErr := adapters.HttpStatusError{
 				Message: errMsg,
 				Status:  http.StatusInternalServerError,
 				Path:    r.URL.Path,
 			}
-			e.Logger.Error(httpErr.Error())
+			slog.Error(httpErr.Error())
 			return httpErr
 		}
 
@@ -114,24 +116,23 @@ func HandleCreateThread(e *core.Env, w http.ResponseWriter, r *http.Request, p h
 		}
 	}
 
-	thread, err := queries.CreateThread(e.DbCtx, ctfParams)
+	thread, err := dbFactory.CreateThread(r.Context(), ctfParams)
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to create thread file: %v", err.Error())
-		httpErr := core.HttpStatusError{
+		httpErr := adapters.HttpStatusError{
 			Message: errMsg,
 			Status:  http.StatusInternalServerError,
 			Path:    r.URL.Path,
 		}
-		e.Logger.Error(httpErr.Error())
+		slog.Error(httpErr.Error())
 		return httpErr
 	}
-	e.Logger.Info(fmt.Sprintf("thread %d created successfully", thread.ID))
+	slog.Info(fmt.Sprintf("thread %d created successfully", thread.ID))
 
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
-	e.WriteJsonResponse(
+	adapters.WriteJsonResponse(
 		w, map[string]string{"threadId": string(thread.ID)}, "Thread created successfully",
 	)
-
 	return nil
 }

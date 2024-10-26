@@ -90,7 +90,7 @@ type responseObj struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func (e *Env) WriteJsonResponse(w io.Writer, v any, msg string) {
+func WriteJsonResponse(w io.Writer, v any, msg string) {
 	response := responseObj{Data: v}
 	if msg != "" {
 		response.Message = msg
