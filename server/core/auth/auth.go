@@ -3,15 +3,15 @@ package auth
 import (
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/markbates/goth"
-	"github.com/markbates/goth/providers/github"
-	"github.com/markbates/goth/providers/google"
+	// "os"
+	// "github.com/markbates/goth/providers/github"
+	// "github.com/markbates/goth/providers/google"
 )
 
 const (
@@ -100,17 +100,18 @@ func NewAuthConfig(provs []string) {
 	store.Options.Path = "/api/v1/"
 	store.Options.HttpOnly = true
 	store.Options.Secure = IsProd
-
-	goth.UseProviders(
-		google.New(
-			os.Getenv("GOOGLE_CLIENT_ID"),
-			os.Getenv("GOOGLE_CLIENT_SECRET"),
-			os.Getenv("GOOGLE_CALLBACK_URL"),
-		),
-		github.New(
-			os.Getenv("GITHUB_CLIENT_ID"),
-			os.Getenv("GITHUB_CLIENT_SECRET"),
-			os.Getenv("GITHUB_CALLBACK_URL"),
-		),
-	)
+	/*
+		goth.UseProviders(
+			google.New(
+				os.Getenv("GOOGLE_CLIENT_ID"),
+				os.Getenv("GOOGLE_CLIENT_SECRET"),
+				os.Getenv("GOOGLE_CALLBACK_URL"),
+			),
+			github.New(
+				os.Getenv("GITHUB_CLIENT_ID"),
+				os.Getenv("GITHUB_CLIENT_SECRET"),
+				os.Getenv("GITHUB_CALLBACK_URL"),
+			),
+		)
+	*/
 }
