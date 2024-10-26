@@ -17,8 +17,8 @@ import (
 const (
 	Credentials = iota
 	Github_OAuth
-	Microsoft_OAuth
 	Google_OAuth
+	Microsoft_OAuth
 )
 
 // ? Should we move these to an env variable?
@@ -64,7 +64,6 @@ func VerifyToken(tokenString string) error {
 	return nil
 }
 
-// OAuth - goth
 var providersLookupMap = map[string]int{
 	"google":      Google_OAuth,
 	"github":      Github_OAuth,

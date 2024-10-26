@@ -56,14 +56,12 @@ type LlmChatClient struct {
 	LlmParams any    `json:"modelParams,omitempty"` // TODO: This should be a struct controlling LLM params
 }
 
-// Builder pattern
 // TODO: replace `llmParams` any type with final struct type
 func (c *Client) AsLlm(modelUrl string, llmParams any) *LlmChatClient {
 	return &LlmChatClient{Client: *c, ModelUrl: modelUrl, LlmParams: llmParams}
 }
 
 // TODO: Implement LlmChatClient as llmClient interface
-
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
